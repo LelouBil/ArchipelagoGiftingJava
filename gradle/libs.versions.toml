@@ -1,0 +1,15 @@
+[versions]
+kotlin = "2.1.21"
+junit = "5.10.0"
+kotlinx-serialization = "1.8.1"
+
+[libraries]
+junit = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+archipelagoJavaClient = { group = "io.github.archipelagomw", name = "Java-Client", version = "0.1.20-SNAPSHOT" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.7.3" }
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
