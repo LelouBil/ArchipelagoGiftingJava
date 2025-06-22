@@ -6,7 +6,7 @@ kotlinx-serialization = "1.8.1"
 [libraries]
 junit = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
 archipelagoJavaClient = { group = "io.github.archipelagomw", name = "Java-Client", version = "0.1.20-SNAPSHOT" }
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+gson = { group = "com.google.code.gson", name = "gson", version = "2.10.1" }
 kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.7.3" }
 
 [plugins]

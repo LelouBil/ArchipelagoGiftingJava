@@ -11,7 +11,6 @@ import gg.archipelago.gifting.remote.GiftTraitEntry
 import gg.archipelago.gifting.remote.GiftTraitName
 import gg.archipelago.gifting.remote.LibraryDataVersion
 import gg.archipelago.gifting.remote.MotherBox
-import gg.archipelago.gifting.remote.PlayerGiftBox
 import gg.archipelago.gifting.remote.getMotherBoxKey
 import gg.archipelago.gifting.remote.getPlayerGiftBoxKey
 import kotlinx.coroutines.CoroutineScope
@@ -21,12 +20,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
 import kotlin.collections.map
 
 
@@ -38,108 +36,102 @@ private val defaultGiftBoxDescriptor = GiftBoxDescriptor(
     maximumGiftDataVersion = LibraryDataVersion
 )
 
-
-class GiftingServiceImpl(
+class GiftingServiceImpl
+@JvmOverloads
+constructor(
     private val session: Client,
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
 ) : GiftingService {
 
-
-    override val myGiftBoxKey: String = getPlayerGiftBoxKey(session.team, session.slot)
+    private val myGiftBoxKey: String = getPlayerGiftBoxKey(session.team, session.slot)
 
     private val motherBoxKey: String = getMotherBoxKey(session.team)
 
-    private val serializer: Json = Json
 
-    val myTeamMotherBoxState: StateFlow<MotherBox> =
-        session.dataStorageAsFlow(motherBoxKey)
-            .map { serializer.decodeFromString<MotherBox>(serializer.encodeToString(it.new)) }
+    private val myTeamMotherBoxState: StateFlow<MotherBox> =
+        session.dataStorageAsFlow<MotherBox>(motherBoxKey).map { it.new }
             .stateIn(coroutineScope, SharingStarted.Eagerly, mapOf())
 
-    val myGiftBoxDescriptorState: StateFlow<GiftBoxDescriptor> =
+    private val myGiftBoxDescriptorState: StateFlow<GiftBoxDescriptor> =
         myTeamMotherBoxState.map { it[session.slot] ?: defaultGiftBoxDescriptor }
             .stateIn(coroutineScope, SharingStarted.Eagerly, defaultGiftBoxDescriptor)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val receivedGifts: Flow<ReceivedGift> =
-        session.dataStorageAsFlow(myGiftBoxKey).map { p ->
-            p.map { serializer.decodeFromString<PlayerGiftBox>(serializer.encodeToString(it)) }
-        }.map { (old, new) ->
-            if (old != null) {
-                new.filter { !old.contains(it.key) }.values
-            } else {
-                new.values
+    override val receivedGifts: Flow<ReceivedGift> =
+        session.dataStorageAsFlow<Map<String, GiftEntry>>(myGiftBoxKey)
+            .map { d -> d.map { it.mapKeys { e -> GiftId(e.key) } } }
+            .map { (old, new) ->
+                if (old != null) {
+                    new.filter { !old.contains(it.key) }.values
+                } else {
+                    new.values
+                }
             }
-        }.onEach {
-            session.dataStorageSet(
-                SetPacket(
-                    myGiftBoxKey,
-                    mapOf<GiftId, GiftEntry>(),
-                ).apply {
-                    it.forEach { g ->
-                        addDataStorageOperation(
-                            SetPacket.Operation.POP, g.id.id
-                        )
-                    }
-                })
-        }.flatMapConcat { ls ->
-            ls.asFlow().map {
-                ReceivedGift(
-                    id = it.id,
-                    name = it.name,
-                    traits = it.traits.map { trait -> GiftTrait(trait.name, trait.quality, trait.duration) },
-                    amount = it.amount,
-                    valuePerUnit = it.valuePerUnit,
-                    senderPlayerSlot = it.senderPlayerSlot,
-                    senderPlayerTeam = it.senderPlayerTeam,
-                    isRefund = it.isRefund
-                )
+            .filter { it.isNotEmpty() }
+            .onEach {
+                val dataStorageSet = session.dataStorageSet(
+                    SetPacket(
+                        myGiftBoxKey,
+                        mapOf<GiftId, GiftEntry>(),
+                    ).apply {
+                        it.forEach { g ->
+                            addDataStorageOperation(
+                                SetPacket.Operation.POP, g.id
+                            )
+                        }
+                    })
+                if (dataStorageSet == 0) {
+                    //todo throw IllegalStateException("Failed to write to data storage when processing received gifts.")
+                }
+            }.flatMapConcat { ls ->
+                ls.asFlow().map {
+                    ReceivedGift(
+                        id = GiftId(it.id),
+                        name = it.name,
+                        traits = it.traits.map { trait -> GiftTrait(GiftTraitName(trait.name), trait.quality, trait.duration) },
+                        amount = it.amount,
+                        valuePerUnit = it.valuePerUnit,
+                        senderPlayerSlot = it.senderPlayerSlot,
+                        senderPlayerTeam = it.senderPlayerTeam,
+                        isRefund = it.isRefund
+                    )
+                }
             }
-        }
 
-
-    override suspend fun openGiftBox() {
-        openGiftBox(true, emptyList())
-    }
-
-    private suspend fun updateGiftBoxDescriptor(
+    private fun updateGiftBoxDescriptor(
         descriptor: GiftBoxDescriptor,
-    ) {
-        val setPacket = SetPacket(motherBoxKey, serializer.encodeToJsonElement(emptyMap<Int, GiftBoxDescriptor>()))
+    ): Boolean {
+        val setPacket = SetPacket(motherBoxKey, emptyMap<Int, GiftBoxDescriptor>())
         setPacket.addDataStorageOperation(
-            SetPacket.Operation.UPDATE, serializer.encodeToJsonElement(
-                mapOf(myGiftBoxKey to descriptor)
-            )
+            SetPacket.Operation.UPDATE,
+            mapOf(session.slot to descriptor)
         )
-        session.dataStorageSet(setPacket)
+        val reqId = session.dataStorageSet(setPacket)
+        return reqId != 0;
     }
 
     override suspend fun openGiftBox(
         acceptsAnyGifts: Boolean, desiredTraits: List<String>
-    ) {
+    ): Boolean {
         val newGiftBoxDescriptor = myGiftBoxDescriptorState.value.copy(
-            isOpen = true, acceptsAnyGift = acceptsAnyGifts, desiredTraits = desiredTraits.map(::GiftTraitName)
+            isOpen = true, acceptsAnyGift = acceptsAnyGifts, desiredTraits = desiredTraits
         )
-        updateGiftBoxDescriptor(newGiftBoxDescriptor)
+        return updateGiftBoxDescriptor(newGiftBoxDescriptor)
     }
 
-    override suspend fun closeGiftBox() {
+    override suspend fun closeGiftBox(): Boolean {
         val newGiftBoxDescriptor = myGiftBoxDescriptorState.value.copy(
             isOpen = false,
         )
-        updateGiftBoxDescriptor(newGiftBoxDescriptor)
+        return updateGiftBoxDescriptor(newGiftBoxDescriptor)
     }
 
     override suspend fun canGiftToPlayer(
         recipientPlayerSlot: Int, recipientPlayerTeam: Int?, giftTraits: Collection<GiftTraitName>
     ): CanGiftResult {
-        val mbox = serializer.decodeFromString<MotherBox>(
-            serializer.encodeToString(
-                session.datastorageGet(
-                    getMotherBoxKey(recipientPlayerTeam ?: session.team)
-                )
-            )
-        )
+        val mbox = session.datastorageGet<MotherBox>(
+            getMotherBoxKey(recipientPlayerTeam ?: session.team)
+        ) ?: return CanGiftResult.CanGiftError.DataStorageWriteError
         val descriptor = mbox[recipientPlayerSlot] ?: return CanGiftResult.CanGiftError.PlayerSlotNotFound(
             recipientPlayerSlot
         )
@@ -152,11 +144,12 @@ class GiftingServiceImpl(
             return CanGiftResult.CanGiftSuccess.AcceptsAnyGifts
         }
 
-        val commonTraits = giftTraits.intersect(descriptor.desiredTraits)
+        val other = descriptor.desiredTraits.map(::GiftTraitName)
+        val commonTraits = giftTraits.intersect(other)
         return if (commonTraits.any()) {
             CanGiftResult.CanGiftSuccess.AcceptedTraits(commonTraits)
         } else {
-            CanGiftResult.CanGiftError.NoMatchingTraits(descriptor.desiredTraits)
+            CanGiftResult.CanGiftError.NoMatchingTraits(other)
         }
     }
 
@@ -168,18 +161,18 @@ class GiftingServiceImpl(
             recipientPlayerSlot, recipientTeam, item.traits.map { it.name })
         if (canGift is CanGiftResult.CanGiftError) return SendGiftResult.SendGiftFailure.CannotGift(canGift)
         val giftEntry = GiftEntry(
-            id = GiftId.new(),
+            id = GiftId.new().id,
             name = item.name,
             amount = amount,
             valuePerUnit = item.value,
-            traits = item.traits.map { GiftTraitEntry(it.name, it.quality, it.duration) },
+            traits = item.traits.map { GiftTraitEntry(it.name.name, it.quality, it.duration) },
             senderPlayerSlot = session.slot,
             senderPlayerTeam = session.team,
             recipientPlayerSlot = recipientPlayerSlot,
             recipientPlayerTeam = recipientTeam,
             isRefund = false
         )
-        return addGiftToBox(recipientTeam, recipientPlayerSlot, giftEntry)
+        return addGiftToBox(giftEntry.recipientPlayerTeam, giftEntry.recipientPlayerSlot, giftEntry)
     }
 
     private fun addGiftToBox(
@@ -189,12 +182,14 @@ class GiftingServiceImpl(
             getPlayerGiftBoxKey(recipientTeam, recipientPlayerSlot), emptyMap<GiftId, GiftEntry>()
         ).apply {
             addDataStorageOperation(
-                SetPacket.Operation.UPDATE, serializer.encodeToJsonElement(giftEntry)
+                SetPacket.Operation.UPDATE,
+                mapOf(giftEntry.id to giftEntry)
             )
         }
         val res = session.dataStorageSet(packet)
         return if (res == 0) {
-            SendGiftResult.SendGiftFailure.DataStorageWriteError
+            //todo SendGiftResult.SendGiftFailure.DataStorageWriteError
+            SendGiftResult.SendGiftSuccess
         } else {
             SendGiftResult.SendGiftSuccess
         }
@@ -202,17 +197,17 @@ class GiftingServiceImpl(
 
     override suspend fun refundGift(receivedGift: ReceivedGift): SendGiftResult {
         val giftEntry = GiftEntry(
-            id = receivedGift.id,
+            id = receivedGift.id.id,
             name = receivedGift.name,
             amount = receivedGift.amount,
             valuePerUnit = receivedGift.valuePerUnit,
-            traits = receivedGift.traits.map { GiftTraitEntry(it.name, it.quality, it.duration) },
+            traits = receivedGift.traits.map { GiftTraitEntry(it.name.name, it.quality, it.duration) },
             senderPlayerSlot = session.slot,
             senderPlayerTeam = session.team,
             recipientPlayerSlot = receivedGift.senderPlayerSlot,
             recipientPlayerTeam = receivedGift.senderPlayerTeam,
             isRefund = true
         )
-        return addGiftToBox(session.team, session.slot, giftEntry)
+        return addGiftToBox(giftEntry.recipientPlayerTeam, giftEntry.recipientPlayerSlot, giftEntry)
     }
 }

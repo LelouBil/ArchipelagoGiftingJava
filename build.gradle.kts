@@ -2,10 +2,10 @@ import java.net.URI
 
 plugins {
     alias(libs.plugins.kotlin)
-    alias(libs.plugins.kotlinx.serialization)
+    `maven-publish`
 }
 
-group = "gg.archipelago"
+group = "net.leloubil.archipelago"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -23,9 +23,24 @@ repositories {
 
 dependencies {
     implementation(libs.archipelagoJavaClient)
-    implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines)
+    implementation(libs.gson)
     testImplementation(libs.junit)
+}
+val sourcesJar by tasks.named("kotlinSourcesJar")
+
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = project.group.toString()
+            artifactId = "gifting-jvm"
+            version = project.version.toString()
+
+            from(components["kotlin"])
+            artifact(sourcesJar)
+        }
+    }
 }
 
 tasks.test {

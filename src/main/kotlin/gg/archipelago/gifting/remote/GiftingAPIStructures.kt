@@ -1,13 +1,11 @@
 package gg.archipelago.gifting.remote
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import com.google.gson.annotations.SerializedName
 import java.util.UUID
 
 const val LibraryDataVersion = 3
 
 @JvmInline
-@Serializable
 value class GiftId(val id: String) {
     companion object {
         fun new(): GiftId {
@@ -17,70 +15,66 @@ value class GiftId(val id: String) {
 }
 
 @JvmInline
-@Serializable
 value class GiftTraitName(val name: String)
 
 // https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/main/Documentation/Gifting%20API.md#giftbox
-fun getMotherBoxKey(team: Int) : String {
+internal fun getMotherBoxKey(team: Int) : String {
     return "GiftBoxes;$team"
 }
 
-fun getPlayerGiftBoxKey(playerTeam: Int, playerSlot: Int): String {
+internal fun getPlayerGiftBoxKey(playerTeam: Int, playerSlot: Int): String {
     return "GiftBox;$playerTeam;$playerSlot"
 }
 
 // https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/main/Documentation/Gifting%20API.md#gift-specification
-@Serializable
-data class GiftEntry(
-    @SerialName("id")
-    val id: GiftId,
-    @SerialName("item_name")
+internal data class GiftEntry(
+    @SerializedName("id")
+    val id: String,
+    @SerializedName("item_name")
     val name: String,
-    @SerialName("amount")
+    @SerializedName("amount")
     val amount: Int,
-    @SerialName("item_value")
+    @SerializedName("item_value")
     val valuePerUnit: Int?,
-    @SerialName("traits")
+    @SerializedName("traits")
     val traits: List<GiftTraitEntry>,
-    @SerialName("sender_slot")
+    @SerializedName("sender_slot")
     val senderPlayerSlot: Int,
-    @SerialName("sender_team")
+    @SerializedName("sender_team")
     val senderPlayerTeam: Int,
-    @SerialName("receiver_slot")
+    @SerializedName("receiver_slot")
     val recipientPlayerSlot: Int,
-    @SerialName("receiver_team")
+    @SerializedName("receiver_team")
     val recipientPlayerTeam: Int,
-    @SerialName("is_refund")
+    @SerializedName("is_refund")
     val isRefund: Boolean
 )
 
 // https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/main/Documentation/Gifting%20API.md#gifttrait-specification
-@Serializable
-data class GiftTraitEntry(
-    @SerialName("trait")
-    val name: GiftTraitName,
-    @SerialName("quality")
-    val quality: Float = 1f,
-    @SerialName("duration")
-    val duration: Float = 1f
+internal data class GiftTraitEntry(
+    @SerializedName("trait")
+    val name: String,
+    @SerializedName("quality")
+    val quality: Float,
+    @SerializedName("duration")
+    val duration: Float,
 )
 
 // https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/main/Documentation/Gifting%20API.md#giftbox-metadata-specification
-@Serializable
-data class GiftBoxDescriptor(
-    @SerialName("is_open")
+internal data class GiftBoxDescriptor(
+    @SerializedName("is_open")
     val isOpen: Boolean,
-    @SerialName("accepts_any_gift")
+    @SerializedName("accepts_any_gift")
     val acceptsAnyGift: Boolean,
-    @SerialName("desired_traits")
-    val desiredTraits: List<GiftTraitName>,
-    @SerialName("minimum_gift_data_version")
+    @SerializedName("desired_traits")
+    val desiredTraits: List<String>,
+    @SerializedName("minimum_gift_data_version")
     val minimumGiftDataVersion: Int,
-    @SerialName("maxiumum_gift_data_version")
+    @SerializedName("maximum_gift_data_version")
     val maximumGiftDataVersion: Int,
 )
-typealias MotherBox = Map<Int, GiftBoxDescriptor>
-typealias PlayerGiftBox = Map<GiftId, GiftEntry>
+internal typealias MotherBox = Map<Int, GiftBoxDescriptor>
+internal typealias PlayerGiftBox = Map<GiftId, GiftEntry>
 
 
 

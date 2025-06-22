@@ -1,1 +1,1 @@
-rootProject.name = "ArchipelagoGiftingJava"
+rootProject.name = "ArchipelagoGiftingJvm"

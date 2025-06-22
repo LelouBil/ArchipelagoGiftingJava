@@ -1,6 +1,7 @@
 package gg.archipelago.gifting.api
 
 import gg.archipelago.gifting.remote.GiftTraitName
+import kotlinx.coroutines.flow.Flow
 
 sealed interface CanGiftResult {
 
@@ -30,17 +31,16 @@ sealed interface SendGiftResult {
     data object SendGiftSuccess : SendGiftResult
     sealed interface SendGiftFailure : SendGiftResult {
         data class CannotGift(val reason: CanGiftResult.CanGiftError) : SendGiftResult
-        data object  DataStorageWriteError : SendGiftFailure
+        data object DataStorageWriteError : SendGiftFailure
     }
 }
 
 interface GiftingService {
-    val myGiftBoxKey: String
 
-    suspend fun openGiftBox()
-    suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<String>)
+    suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<String>): Boolean
+    suspend fun closeGiftBox(): Boolean
 
-    suspend fun closeGiftBox()
+    val receivedGifts: Flow<ReceivedGift>
 
     suspend fun canGiftToPlayer(
         recipientPlayerSlot: Int,
