@@ -3,6 +3,7 @@ import java.net.URI
 
 plugins {
     alias(libs.plugins.kotlin)
+    alias(libs.plugins.dokka)
     `maven-publish`
     alias(libs.plugins.jreleaser)
 }
@@ -30,6 +31,13 @@ dependencies {
     testImplementation(libs.junit)
 }
 val sourcesJar by tasks.named("kotlinSourcesJar")
+val dokkaHtml by tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class)
+
+val javadocJar: TaskProvider<Jar> by tasks.registering(Jar::class) {
+    dependsOn(dokkaHtml)
+    archiveClassifier.set("javadoc")
+    from(dokkaHtml.outputDirectory)
+}
 
 
 publishing {
@@ -40,6 +48,7 @@ publishing {
 
             from(components["kotlin"])
             artifact(sourcesJar)
+            artifact(javadocJar)
             repositories {
                 maven {
                     url = uri(layout.buildDirectory.dir("staging-deploy"))
