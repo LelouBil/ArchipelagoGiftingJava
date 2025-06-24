@@ -1,4 +1,4 @@
-package gg.archipelago.gifting
+package gg.archipelago.gifting.utils
 
 import com.google.gson.Gson
 import dev.koifysh.archipelago.Client
@@ -16,61 +16,62 @@ import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
 @OptIn(ExperimentalStdlibApi::class)
-inline fun <reified T> convertFromGson(data: Any): T {
+internal inline fun <reified T> convertFromGson(data: Any): T {
     val json = Gson().toJson(data)
     return Gson().fromJson<T>(json, typeOf<T>().javaType)
 }
 
-suspend inline fun <reified T> Client.datastorageGet(key: String): T? = suspendCancellableCoroutine {
-    var req by Delegates.notNull<Int>()
-    val listener = object {
-        @ArchipelagoEventListener
-        fun onDataStorageReceive(evt: RetrievedEvent) {
-            if (evt.requestID != req) return
-            this@datastorageGet.eventManager.unRegisterListener(this)
-            it.resume(evt.data[key]?.let { convertFromGson(it) })
+internal suspend inline fun <reified T> Client.datastorageGet(key: String): T? =
+    suspendCancellableCoroutine { continuation ->
+        var req by Delegates.notNull<Int>()
+        val listener = object {
+
+            @Suppress("unused")
+            @ArchipelagoEventListener
+            fun onDataStorageReceive(evt: RetrievedEvent) {
+                if (evt.requestID != req) return
+                eventManager.unRegisterListener(this)
+                continuation.resume(evt.data[key]?.let { convertFromGson(it) })
+            }
+        }
+
+        this.eventManager.registerListener(listener)
+        req = dataStorageGet(listOf(key))
+        if (req == 0) {
+            //todo throw IOException("Failed to send data storage get request for key: $key")
+            // current java client can't differentiate between a failed request and the first request
+        }
+        continuation.invokeOnCancellation {
+            this.eventManager.unRegisterListener(listener)
         }
     }
-    this.eventManager.registerListener(listener)
-    req = dataStorageGet(listOf(key))
-    if (req == 0) {
-        //todo throw IllegalStateException("Failed to send data storage get request for key: $key")
-    }
-    it.invokeOnCancellation {
-        this.eventManager.unRegisterListener(listener)
-    }
-}
 
-data class DataStorageEventUpdate<T>(val old: T?, val new: T) {
+internal data class DataStorageEventUpdate<T>(val old: T?, val new: T) {
     inline fun <R> map(transform: (T) -> R): DataStorageEventUpdate<R> {
         return DataStorageEventUpdate(old?.let(transform), transform(new))
     }
 }
 
 @OptIn(ExperimentalStdlibApi::class)
-inline fun <reified T> Client.dataStorageAsFlow(key: String): Flow<DataStorageEventUpdate<T>> = callbackFlow {
+internal inline fun <reified T> Client.dataStorageAsFlow(key: String): Flow<DataStorageEventUpdate<T>> = callbackFlow {
     var req by Delegates.notNull<Int>();
     val listener = object {
-
+        @Suppress("unused")
         @ArchipelagoEventListener
         fun onDataStorageReceive(evt: RetrievedEvent) { // initial value
             if (evt.requestID != req) return;
             evt.data[key]?.let { mb ->
-                trySendBlocking(DataStorageEventUpdate<T>(null, convertFromGson(mb)))
+                trySendBlocking(DataStorageEventUpdate(null, convertFromGson(mb)))
             }
         }
 
+        @Suppress("unused")
         @ArchipelagoEventListener
         fun onDataStorageReply(evt: SetReplyEvent) { // subscription handler
             if (evt.key != key) return
-            val old_value = evt.original_value?.let { convertFromGson<T>(it) }
-            val new_value = convertFromGson<T>(evt.value)
-            trySendBlocking(
-                DataStorageEventUpdate(
-                    old_value,
-                    new_value
-                )
-            )
+            val old = evt.original_value?.let { convertFromGson<T>(it) }
+            val new = convertFromGson<T>(evt.value)
+            trySendBlocking(DataStorageEventUpdate(old, new))
         }
     }
     eventManager.registerListener(listener)
@@ -78,6 +79,7 @@ inline fun <reified T> Client.dataStorageAsFlow(key: String): Flow<DataStorageEv
     req = dataStorageGet(listOf(key))
     if (req == 0) {
         //todo throw IllegalStateException("Failed to send data storage get request for key: $key")
+        // current java client can't differentiate between a failed request and the first request
     }
     awaitClose { eventManager.unRegisterListener(listener) }
 }

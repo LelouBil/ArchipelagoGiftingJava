@@ -74,7 +74,7 @@ internal data class GiftBoxDescriptor(
     val maximumGiftDataVersion: Int,
 )
 internal typealias MotherBox = Map<Int, GiftBoxDescriptor>
-internal typealias PlayerGiftBox = Map<GiftId, GiftEntry>
+internal typealias PlayerGiftBox = Map<String, GiftEntry>
 
 
 
