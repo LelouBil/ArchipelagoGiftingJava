@@ -1,19 +1,19 @@
-package gg.archipelago.gifting.api
+package net.leloubil.archipelago.gifting.api
 
 import dev.koifysh.archipelago.Client
 import dev.koifysh.archipelago.network.client.SetPacket
-import gg.archipelago.gifting.utils.dataStorageAsFlow
-import gg.archipelago.gifting.utils.datastorageGet
-import gg.archipelago.gifting.remote.GiftBoxDescriptor
-import gg.archipelago.gifting.remote.GiftEntry
-import gg.archipelago.gifting.remote.GiftId
-import gg.archipelago.gifting.remote.GiftTraitEntry
-import gg.archipelago.gifting.remote.GiftTraitName
-import gg.archipelago.gifting.remote.LibraryDataVersion
-import gg.archipelago.gifting.remote.MotherBox
-import gg.archipelago.gifting.remote.PlayerGiftBox
-import gg.archipelago.gifting.remote.getMotherBoxKey
-import gg.archipelago.gifting.remote.getPlayerGiftBoxKey
+import net.leloubil.archipelago.gifting.utils.dataStorageAsFlow
+import net.leloubil.archipelago.gifting.utils.datastorageGet
+import net.leloubil.archipelago.gifting.remote.GiftBoxDescriptor
+import net.leloubil.archipelago.gifting.remote.GiftEntry
+import net.leloubil.archipelago.gifting.remote.GiftId
+import net.leloubil.archipelago.gifting.remote.GiftTraitEntry
+import net.leloubil.archipelago.gifting.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.remote.LibraryDataVersion
+import net.leloubil.archipelago.gifting.remote.MotherBox
+import net.leloubil.archipelago.gifting.remote.PlayerGiftBox
+import net.leloubil.archipelago.gifting.remote.getMotherBoxKey
+import net.leloubil.archipelago.gifting.remote.getPlayerGiftBoxKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -112,9 +112,9 @@ class DefaultGiftingService(
         return true
     }
 
-    override suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<String>): Boolean {
+    override suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<GiftTraitName>): Boolean {
         val newGiftBoxDescriptor = myGiftBoxDescriptorState.value.copy(
-            isOpen = true, acceptsAnyGift = acceptsAnyGifts, desiredTraits = desiredTraits
+            isOpen = true, acceptsAnyGift = acceptsAnyGifts, desiredTraits = desiredTraits.map(GiftTraitName::name)
         )
         return updateGiftBoxDescriptor(newGiftBoxDescriptor)
     }
@@ -185,27 +185,6 @@ class DefaultGiftingService(
         return addGiftToBox(giftEntry.recipientPlayerTeam, giftEntry.recipientPlayerSlot, giftEntry)
     }
 
-    // Adds a gift entry to the recipient's gift box.
-    private fun addGiftToBox(recipientTeam: Int, recipientPlayerSlot: Int, giftEntry: GiftEntry): SendGiftResult {
-        val packet = SetPacket(
-            getPlayerGiftBoxKey(recipientTeam, recipientPlayerSlot),
-            emptyMap<GiftId, GiftEntry>()
-        ).apply {
-            addDataStorageOperation(
-                SetPacket.Operation.UPDATE,
-                mapOf(giftEntry.id to giftEntry)
-            )
-        }
-        val res = session.dataStorageSet(packet)
-        return if (res == 0) {
-            //todo SendGiftResult.SendGiftFailure.DataStorageWriteError
-            // The java library currently does not differentiate between a failed request and the first request.
-            SendGiftResult.SendGiftSuccess
-        } else {
-            SendGiftResult.SendGiftSuccess
-        }
-    }
-
     override suspend fun refundGift(receivedGift: ReceivedGift): SendGiftResult {
         val giftEntry = GiftEntry(
             id = receivedGift.id.id,
@@ -225,5 +204,26 @@ class DefaultGiftingService(
             giftEntry.recipientPlayerSlot,
             giftEntry
         )
+    }
+
+    // Adds a gift entry to the recipient's gift box.
+    private fun addGiftToBox(recipientTeam: Int, recipientPlayerSlot: Int, giftEntry: GiftEntry): SendGiftResult {
+        val packet = SetPacket(
+            getPlayerGiftBoxKey(recipientTeam, recipientPlayerSlot),
+            emptyMap<GiftId, GiftEntry>()
+        ).apply {
+            addDataStorageOperation(
+                SetPacket.Operation.UPDATE,
+                mapOf(giftEntry.id to giftEntry)
+            )
+        }
+        val res = session.dataStorageSet(packet)
+        return if (res == 0) {
+            //todo SendGiftResult.SendGiftFailure.DataStorageWriteError
+            // The java library currently does not differentiate between a failed request and the first request.
+            SendGiftResult.SendGiftSuccess
+        } else {
+            SendGiftResult.SendGiftSuccess
+        }
     }
 }

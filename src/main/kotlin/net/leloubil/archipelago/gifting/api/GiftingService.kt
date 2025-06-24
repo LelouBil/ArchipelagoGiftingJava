@@ -1,6 +1,9 @@
-package gg.archipelago.gifting.api
+package net.leloubil.archipelago.gifting.api
 
-import gg.archipelago.gifting.remote.GiftTraitName
+import dev.koifysh.archipelago.Client
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import net.leloubil.archipelago.gifting.remote.GiftTraitName
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -65,6 +68,7 @@ sealed interface SendGiftResult {
          * The reason is detailed in the [reason] property.
          */
         data class CannotGift(val reason: CanGiftResult.CanGiftError) : SendGiftResult
+
         /**
          * There was an error while trying to write the gift to the recipient's gift box.
          */
@@ -82,7 +86,19 @@ interface GiftingService {
      * If [acceptsAnyGifts] is true, this list stands for the traits that the game prefers.
      * @return true if the gift box was successfully opened, false otherwise.
      */
-    suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<String>): Boolean
+    suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<GiftTraitName>): Boolean
+
+    /**
+     * Opens the gift box for the player.
+     * @param acceptsAnyGifts If true, this will signal to other players that this gift box accepts all gifts, regardless of traits.
+     * @param desiredTraits If [acceptsAnyGifts] is false, this will be the list of traits that this gift box accepts.
+     * Other games will not usually send gifts with traits that are not in this list.
+     * If [acceptsAnyGifts] is true, this list stands for the traits that the game prefers.
+     * @return true if the gift box was successfully opened, false otherwise.
+     */
+    suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<String>): Boolean {
+        return openGiftBox(acceptsAnyGifts, desiredTraits.map(::GiftTraitName))
+    }
 
     /**
      * Closes the gift box for the player.
@@ -133,4 +149,17 @@ interface GiftingService {
      */
     suspend fun refundGift(receivedGift: ReceivedGift): SendGiftResult
 
+    companion object {
+        /**
+         * Creates a new instance of [GiftingService].
+         * @param client The Archipelago client to use for communication.
+         * @param coroutineScope The coroutine scope to use for listening to archipelago events
+         * @return A new instance of [GiftingService].
+         */
+        operator fun invoke(
+            client: Client,
+            coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+        ) =
+            DefaultGiftingService(client, coroutineScope)
+    }
 }

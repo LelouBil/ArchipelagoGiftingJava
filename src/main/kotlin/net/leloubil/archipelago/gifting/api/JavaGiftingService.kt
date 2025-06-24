@@ -1,16 +1,14 @@
-package gg.archipelago.gifting.api
+package net.leloubil.archipelago.gifting.api
 
 import dev.koifysh.archipelago.Client
-import gg.archipelago.gifting.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.remote.GiftTraitName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CompletableFuture
 import kotlin.jvm.Throws
 
@@ -33,6 +31,12 @@ class JavaGiftingService(client: Client) : AutoCloseable {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private val giftingService = DefaultGiftingService(client)
     private val receivedGiftListeners = mutableListOf<ReceivedGiftListener>()
+
+    private var giftListenJob: Job? = null
+
+    init {
+
+    }
 
     /**
      * Opens the gift box for the player.
@@ -62,6 +66,29 @@ class JavaGiftingService(client: Client) : AutoCloseable {
      */
     fun registerReceivedGiftListener(listener: ReceivedGiftListener) {
         receivedGiftListeners.add(listener)
+    }
+
+    /**
+     * Starts listening for received gifts.
+     * This is required for listeners to receive notifications about received gifts.
+     *
+     * **If there are no listeners registered when calling this method, gifts will be lost!**
+     *
+     * Be sure to register at least one listener before calling this method.
+     */
+    fun startListeningForGifts(){
+        if(giftListenJob != null && giftListenJob!!.isActive) {
+            // Already listening for gifts, no need to start again.
+            return
+        }
+        giftListenJob = coroutineScope.launch {
+            giftingService.receivedGifts.collect { gift ->
+                // Notify all registered listeners about the received gift.
+                for (listener in receivedGiftListeners) {
+                    listener.onReceivedGift(gift)
+                }
+            }
+        }
     }
 
 

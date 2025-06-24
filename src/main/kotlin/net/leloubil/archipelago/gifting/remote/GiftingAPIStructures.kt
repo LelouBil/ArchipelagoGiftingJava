@@ -1,4 +1,4 @@
-package gg.archipelago.gifting.remote
+package net.leloubil.archipelago.gifting.remote
 
 import com.google.gson.annotations.SerializedName
 import java.util.UUID

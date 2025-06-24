@@ -1,7 +1,7 @@
-package gg.archipelago.gifting.api
+package net.leloubil.archipelago.gifting.api
 
-import gg.archipelago.gifting.remote.GiftId
-import gg.archipelago.gifting.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.remote.GiftId
+import net.leloubil.archipelago.gifting.remote.GiftTraitName
 
 /**
  * Represents a trait that a giftable item can have.
@@ -52,16 +52,16 @@ data class GiftItem(
      */
     val name: String,
     /**
-     * The value of the giftable item.
-     * Some games use this to convert gifts into in-game currency or energy.
-     */
-    val value: Int? = null,
-    /**
      * The traits of the giftable item.
      * Traits are used by the recipient's game to determine what item in their game this gift corresponds to.
      * @see GiftTrait
      */
-    val traits: List<GiftTrait>
+    val traits: List<GiftTrait>,
+    /**
+     * The value of the giftable item.
+     * Some games use this to convert gifts into in-game currency or energy.
+     */
+    val value: Int? = null
 )
 
 

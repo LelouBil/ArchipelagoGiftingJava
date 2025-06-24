@@ -1,6 +1,6 @@
-package gg.archipelago.gifting.utils
+package net.leloubil.archipelago.gifting.utils
 
-import gg.archipelago.gifting.api.GiftTrait
+import net.leloubil.archipelago.gifting.api.GiftTrait
 import kotlin.collections.MutableList
 import kotlin.collections.MutableMap
 import kotlin.math.abs
@@ -10,14 +10,14 @@ import kotlin.math.min
 // Source: https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/main/Archipelago.Gifting.Net/Archipelago.Gifting.Net/Utilities/CloseTraitParser/BKTreeCloseTraitParser.cs
 // (converted to Kotlin)
 
-typealias DistanceDelegate =
+typealias DistanceFunction =
             (List<GiftTrait>, MutableMap<String, Pair<Float, Float>>, BKTreeCloseTraitParser.BooleanWrapper) -> Float
 
-class BKTreeCloseTraitParser<T>(distanceDelegate: DistanceDelegate? = null) {
+class BKTreeCloseTraitParser<T>(distanceDelegate: DistanceFunction? = null) {
     private val _items: MutableList<T> = mutableListOf()
     private val _traits: MutableMap<String, Pair<Float, Float>> = mutableMapOf()
     private val _children: MutableMap<Float, BKTreeCloseTraitParser<T>> = mutableMapOf()
-    private val _distance: DistanceDelegate = distanceDelegate ?: ::defaultDistance
+    private val _distance: DistanceFunction = distanceDelegate ?: ::defaultDistance
 
 
     fun registerAvailableGift(availableGift: T, traits: List<GiftTrait>) {
