@@ -20,6 +20,8 @@ jobs:
       - name: Build with Gradle
         # This just publishes to the local file system; jreleaser is responsible for uploading to maven central
         run: ./gradlew publish
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
       - name: Upload to Maven Central Snapshots
         env:
           JRELEASER_NEXUS2_USERNAME: ${{ secrets.JRELEASER_NEXUS2_USERNAME }}
