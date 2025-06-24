@@ -40,6 +40,11 @@ publishing {
 
             from(components["kotlin"])
             artifact(sourcesJar)
+            repositories {
+                maven {
+                    url = uri(layout.buildDirectory.dir("staging-deploy"))
+                }
+            }
 
             pom {
                 name = "ArchipelagoGiftingJvm"
@@ -81,28 +86,32 @@ jreleaser {
         armored = true
     }
     deploy {
-        maven {
-            mavenCentral {
-                create("sonatype") {
-                    active = Active.RELEASE
-                    url = "https://central.sonatype.com/api/v1/publisher"
-                    stagingRepository("target/staging-deploy")
+        deploy {
+            maven {
+                mavenCentral {
+                    register("release-deploy") {
+                        // Turning off releases; supposed to be turned on via environment variable
+                        active = Active.NEVER
+                        applyMavenCentralRules = true
+                        url = "https://central.sonatype.com/api/v1/publisher"
+                        stagingRepository("build/staging-deploy")
+                    }
                 }
-            }
-            nexus2 {
-                create("snapshot-deploy") {
-                    active = Active.SNAPSHOT
-                    snapshotUrl = "{central_snapshot_url}"
-                    applyMavenCentralRules = true
-                    snapshotSupported = true
-                    closeRepository = true
-                    releaseRepository = true
-                    stagingRepository("target/staging-deploy")
+                nexus2 {
+                    register("snapshot-deploy") {
+                        active = Active.SNAPSHOT
+                        applyMavenCentralRules = true
+                        snapshotSupported = true
+                        closeRepository = true
+                        releaseRepository = true
+                        url = "https://central.sonatype.com/api/v1/publisher"
+                        snapshotUrl = "https://central.sonatype.com/repository/maven-snapshots/"
+                        stagingRepository("build/staging-deploy")
+                    }
                 }
             }
         }
     }
-
 }
 
 
