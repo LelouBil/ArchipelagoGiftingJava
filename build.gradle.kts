@@ -1,5 +1,6 @@
 import org.jreleaser.model.Active
 import java.net.URI
+import java.util.Optional
 
 plugins {
     alias(libs.plugins.kotlin)
@@ -9,7 +10,7 @@ plugins {
 }
 
 group = "net.leloubil"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -77,6 +78,14 @@ publishing {
     }
 }
 
+@Suppress("UnstableApiUsage")
+fun activeDeploy(provider: Provider<String>): Provider<Active> {
+    // Releases turned on by environment variable
+    return provider.map { v ->
+            Active.values().firstOrNull { v.uppercase() == it.name }.let { Optional.ofNullable(it) }
+        }.filter(Optional<Active>::isPresent).map(Optional<Active>::get)
+}
+
 jreleaser {
     project {
         authors = listOf("LelouBil")
@@ -99,8 +108,12 @@ jreleaser {
             maven {
                 mavenCentral {
                     register("release-deploy") {
-                        // Turning off releases; supposed to be turned on via environment variable
-                        active = Active.NEVER
+                        // Releases turned on by environment variable
+                        active = activeDeploy(
+                            providers.environmentVariable(
+                                    "JRELEASER_DEPLOY_MAVEN_MAVENCENTRAL_RELEASE_DEPLOY_ACTIVE"
+                                )
+                        ).orElse(Active.NEVER)
                         applyMavenCentralRules = true
                         url = "https://central.sonatype.com/api/v1/publisher"
                         stagingRepository("build/staging-deploy")
@@ -108,7 +121,11 @@ jreleaser {
                 }
                 nexus2 {
                     register("snapshot-deploy") {
-                        active = Active.SNAPSHOT
+                        active = activeDeploy(
+                            providers.environmentVariable(
+                                "JRELEASER_DEPLOY_MAVEN_MAVENCENTRAL_SNAPSHOT_DEPLOY_ACTIVE"
+                            )
+                        ).orElse(Active.SNAPSHOT)
                         applyMavenCentralRules = true
                         snapshotSupported = true
                         closeRepository = true
