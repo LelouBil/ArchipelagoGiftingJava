@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.1.21"
 junit = "5.10.0"
-kotlinx-serialization = "1.8.1"
+jreleaser = "1.18.0"
 
 [libraries]
 junit = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
@@ -11,4 +11,5 @@ kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutin
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
 
