@@ -78,7 +78,7 @@ sealed interface SendGiftResult {
 
 interface GiftingService {
 
-    /**
+     /**
      * Opens the gift box for the player.
      * @param acceptsAnyGifts If true, this will signal to other players that this gift box accepts all gifts, regardless of traits.
      * @param desiredTraits If [acceptsAnyGifts] is false, this will be the list of traits that this gift box accepts.
@@ -86,19 +86,7 @@ interface GiftingService {
      * If [acceptsAnyGifts] is true, this list stands for the traits that the game prefers.
      * @return true if the gift box was successfully opened, false otherwise.
      */
-    suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<GiftTraitName>): Boolean
-
-    /**
-     * Opens the gift box for the player.
-     * @param acceptsAnyGifts If true, this will signal to other players that this gift box accepts all gifts, regardless of traits.
-     * @param desiredTraits If [acceptsAnyGifts] is false, this will be the list of traits that this gift box accepts.
-     * Other games will not usually send gifts with traits that are not in this list.
-     * If [acceptsAnyGifts] is true, this list stands for the traits that the game prefers.
-     * @return true if the gift box was successfully opened, false otherwise.
-     */
-    suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<String>): Boolean {
-        return openGiftBox(acceptsAnyGifts, desiredTraits.map(::GiftTraitName))
-    }
+    suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<String>): Boolean
 
     /**
      * Closes the gift box for the player.

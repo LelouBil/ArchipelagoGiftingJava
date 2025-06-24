@@ -112,9 +112,9 @@ class DefaultGiftingService(
         return true
     }
 
-    override suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<GiftTraitName>): Boolean {
+    override suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<String>): Boolean {
         val newGiftBoxDescriptor = myGiftBoxDescriptorState.value.copy(
-            isOpen = true, acceptsAnyGift = acceptsAnyGifts, desiredTraits = desiredTraits.map(GiftTraitName::name)
+            isOpen = true, acceptsAnyGift = acceptsAnyGifts, desiredTraits = desiredTraits
         )
         return updateGiftBoxDescriptor(newGiftBoxDescriptor)
     }

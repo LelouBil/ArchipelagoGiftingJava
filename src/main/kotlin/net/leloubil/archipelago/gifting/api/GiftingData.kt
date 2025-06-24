@@ -29,11 +29,18 @@ data class GiftTrait(
      */
     val duration: Float = 1f
 ) {
-    constructor(name: String,
-                quality: Float = 1f,
-                duration: Float = 1f
-    ) : this(GiftTraitName(name), quality, duration)
+    companion object {
+        @Suppress("NOTHING_TO_INLINE")
+        inline operator fun invoke(
+            name: String,
+            quality: Float = 1f,
+            duration: Float = 1f
+        ): GiftTrait {
+            return GiftTrait(GiftTraitName(name), quality, duration)
+        }
+    }
 }
+
 
 /**
  * Represents an item that can be gifted.
