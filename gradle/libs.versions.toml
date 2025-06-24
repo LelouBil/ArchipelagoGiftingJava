@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.1.21"
-junit = "5.10.0"
+junit = "5.13.1"
 jreleaser = "1.18.0"
 
 [libraries]
