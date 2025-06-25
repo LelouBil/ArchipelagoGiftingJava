@@ -20,8 +20,13 @@ dependencies {
     implementation(libs.archipelagoJavaClient)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.gson)
-    testImplementation(libs.junit)
+    testImplementation(libs.bundles.kotest)
 }
+
+tasks.test {
+    useJUnitPlatform()
+}
+
 val sourcesJar by tasks.named("kotlinSourcesJar")
 val dokkaHtml by tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class)
 
@@ -131,7 +136,3 @@ jreleaser {
     }
 }
 
-
-tasks.test {
-    useJUnitPlatform()
-}
