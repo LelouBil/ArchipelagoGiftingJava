@@ -59,7 +59,7 @@ class DefaultGiftingService(
         session.dataStorageAsFlow<PlayerGiftBox>(myGiftBoxKey)
             // Only emit gifts that were actually added in this update.
             .map { (old, new) ->
-                if (old != null) new.filterKeys { old.containsKey(it) } else new
+                if (old != null) new.filterKeys { !old.containsKey(it) } else new
             }
             .map { it.values }
             // Stop here if there are no new gifts.
