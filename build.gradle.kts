@@ -14,15 +14,6 @@ version = "1.0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
-    maven {
-        name = "Central Portal Snapshots"
-        url = URI("https://central.sonatype.com/repository/maven-snapshots/")
-
-        // Only search this repository for the specific dependency
-        content {
-            includeModule("io.github.archipelagomw", "Java-Client")
-        }
-    }
 }
 
 dependencies {
