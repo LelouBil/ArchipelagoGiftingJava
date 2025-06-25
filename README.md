@@ -4,6 +4,9 @@ A JVM implementation of the Archipelago Gifting Protocol.
 This library uses the [Archipelago Java Client](https://github.com/ArchipelagoMW/Java-Client)
 for communication with the Archipelago server.
 
+This library and readme were heavily inspired from the following .NET Gifting 
+Library: https://github.com/agilbert1412/Archipelago.Gifting.Net/
+
 The library is written in Kotlin and is best used with Kotlin features, but it is fully compatible with Java
 and other JVM languages.
 
