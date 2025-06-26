@@ -1,0 +1,13 @@
+name: Setup Build Environment
+author: LelouBil
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v4

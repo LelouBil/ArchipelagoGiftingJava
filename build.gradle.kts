@@ -1,10 +1,10 @@
 import org.jreleaser.model.Active
-import java.net.URI
 import java.util.Optional
 
 plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.dokka)
+    alias(libs.plugins.dokka.javadoc)
     `maven-publish`
     alias(libs.plugins.jreleaser)
 }
@@ -21,6 +21,13 @@ dependencies {
     implementation(libs.kotlinx.coroutines)
     implementation(libs.gson)
     testImplementation(libs.bundles.kotest)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.slf4j.simple)
+}
+
+kotlin{
+    compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
 }
 
 tasks.test {
@@ -28,12 +35,12 @@ tasks.test {
 }
 
 val sourcesJar by tasks.named("kotlinSourcesJar")
-val dokkaHtml by tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class)
+val dokkaGenerateModuleJavadoc by tasks.getting(org.jetbrains.dokka.gradle.tasks.DokkaGenerateModuleTask::class)
 
 val javadocJar: TaskProvider<Jar> by tasks.registering(Jar::class) {
-    dependsOn(dokkaHtml)
+    dependsOn(dokkaGenerateModuleJavadoc)
     archiveClassifier.set("javadoc")
-    from(dokkaHtml.outputDirectory)
+    from(dokkaGenerateModuleJavadoc.outputDirectory)
 }
 
 
@@ -67,7 +74,7 @@ publishing {
                     }
                 }
                 scm {
-                    url = "http://github.com/LelouBil/ArchipelagoGiftingJvm"
+                    url = "https://github.com/LelouBil/ArchipelagoGiftingJvm"
                 }
             }
         }
@@ -121,7 +128,7 @@ jreleaser {
                             providers.environmentVariable(
                                 "JRELEASER_DEPLOY_MAVEN_MAVENCENTRAL_SNAPSHOT_DEPLOY_ACTIVE"
                             )
-                        ).orElse(Active.SNAPSHOT)
+                        ).orElse(Active.NEVER)
                         applyMavenCentralRules = true
                         snapshotSupported = true
                         closeRepository = true

@@ -1,9 +1,9 @@
-package net.leloubil.archipelago.gifting.api
+package net.leloubil.archipelago.gifting.tests.api
 
 import dev.koifysh.archipelago.Client
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import net.leloubil.archipelago.gifting.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -23,15 +23,16 @@ sealed interface CanGiftResult {
      * The player cannot receive the gift.
      */
     sealed interface CanGiftError : CanGiftResult {
-        /**
-         * The specified player slot was not found.
-         */
-        data class PlayerSlotNotFound(val playerSlot: Int) : CanGiftError
 
         /**
          * The recipient's gift box is closed.
          */
         data object GiftBoxClosed : CanGiftError
+
+        /**
+         * The recipient doesn't have a gift box
+         */
+        data object NoGiftBox: CanGiftError
 
         /**
          * The data version of the sender is too low to send gifts to the recipient

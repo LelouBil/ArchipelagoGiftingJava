@@ -1,0 +1,38 @@
+name: Build, Test and Publish
+
+on:
+  release:
+    types: [ released ]
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  build_test:
+    uses: ./.github/workflows/build_test.yaml
+
+  snapshot:
+    if: "github && github.event_name == 'push'"
+    runs-on: ubuntu-latest
+    needs: build_test
+    steps:
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+      - name: Publish release
+        uses: ./.github/workflows/publish.yaml
+        with:
+          type: SNAPSHOT
+
+  release:
+    if: "github && github.event_name == 'release'"
+    runs-on: ubuntu-latest
+    needs: build_test
+    steps:
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+      - name: Publish release
+        uses: ./.github/workflows/publish.yaml
+        with:
+          type: RELEASE

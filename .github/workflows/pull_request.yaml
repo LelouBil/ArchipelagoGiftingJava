@@ -1,0 +1,6 @@
+name: pull_request.yaml
+on: pull_request
+jobs:
+  build_test:
+    uses: ./.github/workflows/build_test.yaml
+

@@ -1,19 +1,19 @@
-package net.leloubil.archipelago.gifting.api
+package net.leloubil.archipelago.gifting.tests.api
 
 import dev.koifysh.archipelago.Client
 import dev.koifysh.archipelago.network.client.SetPacket
-import net.leloubil.archipelago.gifting.utils.dataStorageAsFlow
-import net.leloubil.archipelago.gifting.utils.datastorageGet
-import net.leloubil.archipelago.gifting.remote.GiftBoxDescriptor
-import net.leloubil.archipelago.gifting.remote.GiftEntry
-import net.leloubil.archipelago.gifting.remote.GiftId
-import net.leloubil.archipelago.gifting.remote.GiftTraitEntry
-import net.leloubil.archipelago.gifting.remote.GiftTraitName
-import net.leloubil.archipelago.gifting.remote.LibraryDataVersion
-import net.leloubil.archipelago.gifting.remote.MotherBox
-import net.leloubil.archipelago.gifting.remote.PlayerGiftBox
-import net.leloubil.archipelago.gifting.remote.getMotherBoxKey
-import net.leloubil.archipelago.gifting.remote.getPlayerGiftBoxKey
+import net.leloubil.archipelago.gifting.tests.utils.dataStorageAsFlow
+import net.leloubil.archipelago.gifting.tests.utils.getDataStorage
+import net.leloubil.archipelago.gifting.tests.remote.GiftBoxDescriptor
+import net.leloubil.archipelago.gifting.tests.remote.GiftEntry
+import net.leloubil.archipelago.gifting.tests.remote.GiftId
+import net.leloubil.archipelago.gifting.tests.remote.GiftTraitEntry
+import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.tests.remote.LibraryDataVersion
+import net.leloubil.archipelago.gifting.tests.remote.MotherBox
+import net.leloubil.archipelago.gifting.tests.remote.PlayerGiftBox
+import net.leloubil.archipelago.gifting.tests.remote.getMotherBoxKey
+import net.leloubil.archipelago.gifting.tests.remote.getPlayerGiftBoxKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import net.leloubil.archipelago.gifting.tests.utils.setDataStorage
 import kotlin.collections.map
 
 
@@ -66,7 +67,7 @@ class DefaultGiftingService(
             .filter { it.isNotEmpty() }
             .onEach {
                 // Remove the gifts from the gift box in the data storage.
-                val dataStorageSet = session.dataStorageSet(
+                val dataStorageSet = session.setDataStorage(
                     SetPacket(myGiftBoxKey, mapOf<GiftId, GiftEntry>()).apply {
                         it.forEach { g ->
                             addDataStorageOperation(
@@ -100,13 +101,13 @@ class DefaultGiftingService(
             }
 
     // Write the new gift box descriptor to the data storage.
-    private fun updateGiftBoxDescriptor(descriptor: GiftBoxDescriptor): Boolean {
+    private suspend fun updateGiftBoxDescriptor(descriptor: GiftBoxDescriptor): Boolean {
         val setPacket = SetPacket(motherBoxKey, emptyMap<Int, GiftBoxDescriptor>())
         setPacket.addDataStorageOperation(
             SetPacket.Operation.UPDATE,
             mapOf(session.slot to descriptor)
         )
-        val reqId = session.dataStorageSet(setPacket)
+        val reqId = session.setDataStorage(setPacket)
         //todo return reqId != 0
         // The java library currently does not differentiate between a failed request and the first request.
         return true
@@ -133,11 +134,11 @@ class DefaultGiftingService(
     ): CanGiftResult {
 
         val mbox =
-            session.datastorageGet<MotherBox>(getMotherBoxKey(recipientPlayerTeam))
-                ?: return CanGiftResult.CanGiftError.DataStorageWriteError
+            session.getDataStorage<MotherBox>(getMotherBoxKey(recipientPlayerTeam))
+                ?: return CanGiftResult.CanGiftError.NoGiftBox
 
         val descriptor = mbox[recipientPlayerSlot]
-            ?: return CanGiftResult.CanGiftError.PlayerSlotNotFound(recipientPlayerSlot)
+            ?: return CanGiftResult.CanGiftError.NoGiftBox
 
         if (!descriptor.isOpen) return CanGiftResult.CanGiftError.GiftBoxClosed
 
@@ -207,7 +208,7 @@ class DefaultGiftingService(
     }
 
     // Adds a gift entry to the recipient's gift box.
-    private fun addGiftToBox(recipientTeam: Int, recipientPlayerSlot: Int, giftEntry: GiftEntry): SendGiftResult {
+    private suspend fun addGiftToBox(recipientTeam: Int, recipientPlayerSlot: Int, giftEntry: GiftEntry): SendGiftResult {
         val packet = SetPacket(
             getPlayerGiftBoxKey(recipientTeam, recipientPlayerSlot),
             emptyMap<GiftId, GiftEntry>()
@@ -217,7 +218,7 @@ class DefaultGiftingService(
                 mapOf(giftEntry.id to giftEntry)
             )
         }
-        val res = session.dataStorageSet(packet)
+        val res = session.setDataStorage(packet)
         return if (res == 0) {
             //todo SendGiftResult.SendGiftFailure.DataStorageWriteError
             // The java library currently does not differentiate between a failed request and the first request.

@@ -1,10 +1,11 @@
-package net.leloubil.archipelago.gifting.utils
+package net.leloubil.archipelago.gifting.tests.utils
 
 import com.google.gson.Gson
 import dev.koifysh.archipelago.Client
 import dev.koifysh.archipelago.events.ArchipelagoEventListener
 import dev.koifysh.archipelago.events.RetrievedEvent
 import dev.koifysh.archipelago.events.SetReplyEvent
+import dev.koifysh.archipelago.network.client.SetPacket
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
@@ -21,7 +22,7 @@ internal inline fun <reified T> convertFromGson(data: Any): T {
     return Gson().fromJson<T>(json, typeOf<T>().javaType)
 }
 
-internal suspend inline fun <reified T> Client.datastorageGet(key: String): T? =
+internal suspend inline fun <reified T> Client.getDataStorage(key: String): T? =
     suspendCancellableCoroutine { continuation ->
         var req by Delegates.notNull<Int>()
         val listener = object {
@@ -37,6 +38,34 @@ internal suspend inline fun <reified T> Client.datastorageGet(key: String): T? =
 
         this.eventManager.registerListener(listener)
         req = dataStorageGet(listOf(key))
+        if (req == 0) {
+            //todo throw IOException("Failed to send data storage get request for key: $key")
+            // current java client can't differentiate between a failed request and the first request
+        }
+        continuation.invokeOnCancellation {
+            this.eventManager.unRegisterListener(listener)
+        }
+    }
+
+
+internal suspend inline fun Client.setDataStorage(packet: SetPacket) =
+    suspendCancellableCoroutine { continuation ->
+        var req by Delegates.notNull<Int>()
+        val listener = object {
+
+            @Suppress("unused")
+            @ArchipelagoEventListener
+            fun onSetReply(evt: SetReplyEvent) {
+                if (evt.requestID != req) return
+                eventManager.unRegisterListener(this)
+                continuation.resume(req)
+            }
+        }
+
+        this.eventManager.registerListener(listener)
+        req = dataStorageSet(packet.apply {
+            this.want_reply = true
+        })
         if (req == 0) {
             //todo throw IOException("Failed to send data storage get request for key: $key")
             // current java client can't differentiate between a failed request and the first request
