@@ -1,17 +1,10 @@
-package net.leloubil.archipelago.gifting.utils
+package net.leloubil.archipelago.gifting.tests.utils
 
 import io.kotest.core.spec.style.AnnotationSpec
-import io.kotest.core.spec.style.AnnotationSpec.Test
-import io.kotest.matchers.Matcher
 import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotest.matchers.collections.shouldHaveElementAt
 import io.kotest.matchers.collections.shouldHaveSingleElement
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.collections.shouldStartWith
-import io.kotest.matchers.shouldHave
-import net.leloubil.archipelago.gifting.api.GiftTrait
+import net.leloubil.archipelago.gifting.tests.api.GiftTrait
 
 class CloseTraitParserTests: AnnotationSpec() {
     @Test

@@ -1,7 +1,7 @@
-package net.leloubil.archipelago.gifting.api
+package net.leloubil.archipelago.gifting.tests.api
 
 import dev.koifysh.archipelago.Client
-import net.leloubil.archipelago.gifting.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

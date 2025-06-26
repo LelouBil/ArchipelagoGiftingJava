@@ -1,6 +1,6 @@
-package net.leloubil.archipelago.gifting.utils
+package net.leloubil.archipelago.gifting.tests.utils
 
-import net.leloubil.archipelago.gifting.api.GiftTrait
+import net.leloubil.archipelago.gifting.tests.api.GiftTrait
 import kotlin.collections.MutableList
 import kotlin.collections.MutableMap
 import kotlin.math.abs

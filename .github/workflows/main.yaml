@@ -1,0 +1,31 @@
+name: Build, Test and Publish
+
+on:
+  release:
+    types: [ released ]
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  build_test:
+    name: "Build"
+    uses: ./.github/workflows/build_test.yaml
+
+  snapshot:
+    if: "github && github.event_name == 'push'"
+    needs: build_test
+    uses: ./.github/workflows/publish.yaml
+    secrets: inherit
+    with:
+      type: SNAPSHOT
+
+  release:
+    if: "github && github.event_name == 'release'"
+    secrets: inherit
+    needs: build_test
+    uses: ./.github/workflows/publish.yaml
+    with:
+      type: RELEASE
