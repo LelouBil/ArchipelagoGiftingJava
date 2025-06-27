@@ -1,9 +1,9 @@
-package net.leloubil.archipelago.gifting.tests.api
+package net.leloubil.archipelago.gifting.api
 
 import dev.koifysh.archipelago.Client
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
-import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.remote.GiftTraitName
 import java.util.concurrent.CompletableFuture
 
 fun interface ReceivedGiftListener {

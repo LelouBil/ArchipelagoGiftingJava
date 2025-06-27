@@ -4,7 +4,8 @@ import io.kotest.core.spec.style.AnnotationSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSingleElement
-import net.leloubil.archipelago.gifting.tests.api.GiftTrait
+import net.leloubil.archipelago.gifting.api.GiftTrait
+import net.leloubil.archipelago.gifting.utils.BKTreeCloseTraitParser
 
 class CloseTraitParserTests : AnnotationSpec() {
     @Test

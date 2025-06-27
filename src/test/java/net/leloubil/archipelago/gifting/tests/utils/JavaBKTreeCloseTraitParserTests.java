@@ -1,6 +1,7 @@
 package net.leloubil.archipelago.gifting.tests.utils;
 
-import net.leloubil.archipelago.gifting.tests.api.GiftTrait;
+import net.leloubil.archipelago.gifting.api.GiftTrait;
+import net.leloubil.archipelago.gifting.utils.BKTreeCloseTraitParser;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;

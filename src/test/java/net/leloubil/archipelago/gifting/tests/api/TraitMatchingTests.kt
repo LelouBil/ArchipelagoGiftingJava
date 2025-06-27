@@ -5,7 +5,12 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.extensions.testcontainers.perTest
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.shouldBe
-import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.api.CanGiftResult
+import net.leloubil.archipelago.gifting.api.GiftItem
+import net.leloubil.archipelago.gifting.api.GiftTrait
+import net.leloubil.archipelago.gifting.api.GiftingService
+import net.leloubil.archipelago.gifting.api.SendGiftResult
+import net.leloubil.archipelago.gifting.remote.GiftTraitName
 import net.leloubil.archipelago.gifting.testutils.ArchipelagoContainer
 import net.leloubil.archipelago.gifting.testutils.cliquePlayers
 import net.leloubil.archipelago.gifting.testutils.defer

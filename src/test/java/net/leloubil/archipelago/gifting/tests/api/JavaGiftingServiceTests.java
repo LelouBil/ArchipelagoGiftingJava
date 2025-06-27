@@ -2,6 +2,7 @@ package net.leloubil.archipelago.gifting.tests.api;
 
 import dev.koifysh.archipelago.Client;
 import kotlin.Unit;
+import net.leloubil.archipelago.gifting.api.*;
 import net.leloubil.archipelago.gifting.testutils.ArchipelagoContainer;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;

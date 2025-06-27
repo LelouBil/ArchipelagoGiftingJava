@@ -1,4 +1,4 @@
-package net.leloubil.archipelago.gifting.tests.remote
+package net.leloubil.archipelago.gifting.remote
 
 import com.google.gson.annotations.SerializedName
 import java.util.*

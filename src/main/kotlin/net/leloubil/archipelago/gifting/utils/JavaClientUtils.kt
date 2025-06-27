@@ -1,4 +1,4 @@
-package net.leloubil.archipelago.gifting.tests.utils
+package net.leloubil.archipelago.gifting.utils
 
 import com.google.gson.Gson
 import dev.koifysh.archipelago.Client

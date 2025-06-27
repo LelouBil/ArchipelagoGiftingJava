@@ -8,6 +8,11 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.first
+import net.leloubil.archipelago.gifting.api.CanGiftResult
+import net.leloubil.archipelago.gifting.api.GiftItem
+import net.leloubil.archipelago.gifting.api.GiftingService
+import net.leloubil.archipelago.gifting.api.ReceivedGift
+import net.leloubil.archipelago.gifting.api.SendGiftResult
 import net.leloubil.archipelago.gifting.testutils.ArchipelagoContainer
 import net.leloubil.archipelago.gifting.testutils.cliquePlayers
 import net.leloubil.archipelago.gifting.testutils.defer

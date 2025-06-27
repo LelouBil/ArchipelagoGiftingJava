@@ -1,4 +1,4 @@
-package net.leloubil.archipelago.gifting.tests.api
+package net.leloubil.archipelago.gifting.api
 
 import dev.koifysh.archipelago.Client
 import dev.koifysh.archipelago.network.client.SetPacket
@@ -6,10 +6,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import net.leloubil.archipelago.gifting.tests.remote.*
-import net.leloubil.archipelago.gifting.tests.utils.dataStorageAsFlow
-import net.leloubil.archipelago.gifting.tests.utils.getDataStorage
-import net.leloubil.archipelago.gifting.tests.utils.setDataStorage
+import net.leloubil.archipelago.gifting.remote.GiftBoxDescriptor
+import net.leloubil.archipelago.gifting.remote.GiftEntry
+import net.leloubil.archipelago.gifting.remote.GiftId
+import net.leloubil.archipelago.gifting.remote.GiftTraitEntry
+import net.leloubil.archipelago.gifting.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.remote.LibraryDataVersion
+import net.leloubil.archipelago.gifting.remote.MotherBox
+import net.leloubil.archipelago.gifting.remote.PlayerGiftBox
+import net.leloubil.archipelago.gifting.remote.getMotherBoxKey
+import net.leloubil.archipelago.gifting.remote.getPlayerGiftBoxKey
+import net.leloubil.archipelago.gifting.utils.dataStorageAsFlow
+import net.leloubil.archipelago.gifting.utils.getDataStorage
+import net.leloubil.archipelago.gifting.utils.setDataStorage
 
 
 // The default value for a non-existent gift box descriptor.

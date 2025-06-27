@@ -1,11 +1,11 @@
-package net.leloubil.archipelago.gifting.tests.api
+package net.leloubil.archipelago.gifting.api
 
 import dev.koifysh.archipelago.Client
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import net.leloubil.archipelago.gifting.tests.remote.GiftId
-import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
+import net.leloubil.archipelago.gifting.remote.GiftId
+import net.leloubil.archipelago.gifting.remote.GiftTraitName
 
 /**
  * Represents the result of checking if a player can receive a gift.
