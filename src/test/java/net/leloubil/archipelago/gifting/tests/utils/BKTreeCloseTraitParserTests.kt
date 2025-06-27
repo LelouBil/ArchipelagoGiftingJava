@@ -6,7 +6,7 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import net.leloubil.archipelago.gifting.tests.api.GiftTrait
 
-class CloseTraitParserTests: AnnotationSpec() {
+class CloseTraitParserTests : AnnotationSpec() {
     @Test
     fun testOneExactMatch() {
         val closeTraitParser = BKTreeCloseTraitParser<Any?>()
@@ -41,7 +41,7 @@ class CloseTraitParserTests: AnnotationSpec() {
             closeTraitParser.findClosestAvailableGift(
                 listOf(GiftTrait("a", 1f, 1f))
             )
-        matches.shouldContainExactlyInAnyOrder(1,2)
+        matches.shouldContainExactlyInAnyOrder(1, 2)
     }
 
     @Test
@@ -86,7 +86,7 @@ class CloseTraitParserTests: AnnotationSpec() {
             closeTraitParser.findClosestAvailableGift(
                 listOf(GiftTrait("a", 1f, 1f))
             )
-        matches.shouldContainExactlyInAnyOrder(1,2)
+        matches.shouldContainExactlyInAnyOrder(1, 2)
     }
 
     @Test

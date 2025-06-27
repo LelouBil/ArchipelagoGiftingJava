@@ -2,13 +2,15 @@ package net.leloubil.archipelago.gifting.tests.api
 
 import app.cash.turbine.test
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.extensions.testcontainers.perTest
 import io.kotest.matchers.shouldBe
-import net.leloubil.archipelago.gifting.testutils.archipelagoContainer
+import net.leloubil.archipelago.gifting.testutils.ArchipelagoContainer
+import net.leloubil.archipelago.gifting.testutils.cliquePlayers
 import net.leloubil.archipelago.gifting.testutils.defer
 
 class GiftOrderTests : BehaviorSpec({
     given("A running multiworld") {
-        val mw = archipelagoContainer(playersCount = 3)
+        val mw = ArchipelagoContainer(cliquePlayers(3)).also { register(it.perTest()) }
         val p1 by defer { mw.playerClient(1) }
         val p2 by defer { mw.playerClient(2) }
         val p3 by defer { mw.playerClient(3) }

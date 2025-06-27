@@ -31,6 +31,8 @@ data class GiftTrait(
 ) {
     companion object {
         @Suppress("NOTHING_TO_INLINE")
+        @JvmStatic
+        @JvmName("create")
         inline operator fun invoke(
             name: String,
             quality: Float = 1f,

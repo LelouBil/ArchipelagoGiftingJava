@@ -1,16 +1,10 @@
 package net.leloubil.archipelago.gifting.tests.api
 
 import dev.koifysh.archipelago.Client
-import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
-import kotlinx.coroutines.launch
+import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
 import java.util.concurrent.CompletableFuture
-import kotlin.jvm.Throws
 
 fun interface ReceivedGiftListener {
     /**
@@ -71,13 +65,14 @@ class JavaGiftingService(client: Client) : AutoCloseable {
     /**
      * Starts listening for received gifts.
      * This is required for listeners to receive notifications about received gifts.
+     * The gifts will already be removed from the gift box before being sent to the listeners
      *
      * **If there are no listeners registered when calling this method, gifts will be lost!**
      *
      * Be sure to register at least one listener before calling this method.
      */
-    fun startListeningForGifts(){
-        if(giftListenJob != null && giftListenJob!!.isActive) {
+    fun startListeningForGifts() {
+        if (giftListenJob != null && giftListenJob!!.isActive) {
             // Already listening for gifts, no need to start again.
             return
         }
@@ -91,6 +86,19 @@ class JavaGiftingService(client: Client) : AutoCloseable {
         }
     }
 
+    /**
+     * Returns the current contents of the gift box, without any processing
+     */
+    fun getGiftBoxContents() = coroutineScope.async {
+        giftingService.getGiftBoxContents()
+    }.asCompletableFuture()
+
+    /**
+     * Removes a gift from the gift box
+     */
+    fun removeGiftFromBox(receivedGift: ReceivedGift) = coroutineScope.async {
+        giftingService.removeGiftFromBox(receivedGift)
+    }.asCompletableFuture()
 
     /**
      * Unregisters a listener for received gifts.

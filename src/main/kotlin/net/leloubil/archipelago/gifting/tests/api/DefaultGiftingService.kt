@@ -2,32 +2,14 @@ package net.leloubil.archipelago.gifting.tests.api
 
 import dev.koifysh.archipelago.Client
 import dev.koifysh.archipelago.network.client.SetPacket
-import net.leloubil.archipelago.gifting.tests.utils.dataStorageAsFlow
-import net.leloubil.archipelago.gifting.tests.utils.getDataStorage
-import net.leloubil.archipelago.gifting.tests.remote.GiftBoxDescriptor
-import net.leloubil.archipelago.gifting.tests.remote.GiftEntry
-import net.leloubil.archipelago.gifting.tests.remote.GiftId
-import net.leloubil.archipelago.gifting.tests.remote.GiftTraitEntry
-import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
-import net.leloubil.archipelago.gifting.tests.remote.LibraryDataVersion
-import net.leloubil.archipelago.gifting.tests.remote.MotherBox
-import net.leloubil.archipelago.gifting.tests.remote.PlayerGiftBox
-import net.leloubil.archipelago.gifting.tests.remote.getMotherBoxKey
-import net.leloubil.archipelago.gifting.tests.remote.getPlayerGiftBoxKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
+import net.leloubil.archipelago.gifting.tests.remote.*
+import net.leloubil.archipelago.gifting.tests.utils.dataStorageAsFlow
+import net.leloubil.archipelago.gifting.tests.utils.getDataStorage
 import net.leloubil.archipelago.gifting.tests.utils.setDataStorage
-import kotlin.collections.map
 
 
 // The default value for a non-existent gift box descriptor.
@@ -80,25 +62,40 @@ class DefaultGiftingService(
                     // The java library currently does not differentiate between a failed request and the first request.
                 }
             }
-            // Flatten the flow but keep the order of gifts.
-            .flatMapConcat { giftList ->
-                giftList.map { gift ->
-                    ReceivedGift(
-                        id = GiftId(gift.id),
-                        item = GiftItem(
-                            name = gift.name,
-                            traits = gift.traits.map {
-                                GiftTrait(it.name, it.quality, it.duration)
-                            },
-                            value = gift.valuePerUnit,
-                        ),
-                        amount = gift.amount,
-                        senderPlayerSlot = gift.senderPlayerSlot,
-                        senderPlayerTeam = gift.senderPlayerTeam,
-                        isRefund = gift.isRefund
-                    )
-                }.asFlow()
-            }
+            .flatMapConcat { list -> list.map { it.toReceived() }.asFlow() }
+
+    private fun GiftEntry.toReceived(): ReceivedGift = ReceivedGift(
+        id = GiftId(this.id),
+        item = GiftItem(
+            name = this.name,
+            traits = this.traits.map {
+                GiftTrait(it.name, it.quality, it.duration)
+            },
+            value = this.valuePerUnit,
+        ),
+        amount = this.amount,
+        senderPlayerSlot = this.senderPlayerSlot,
+        senderPlayerTeam = this.senderPlayerTeam,
+        isRefund = this.isRefund
+    )
+
+    override suspend fun getGiftBoxContents(): List<ReceivedGift> {
+        return session.getDataStorage<PlayerGiftBox>(myGiftBoxKey)?.values?.map { it.toReceived() }.orEmpty()
+    }
+
+    override suspend fun removeGiftFromBox(receivedGift: ReceivedGift): Boolean {
+        val res = session.setDataStorage(
+            SetPacket(myGiftBoxKey, mapOf<GiftId, GiftEntry>()).apply {
+                addDataStorageOperation(
+                    SetPacket.Operation.POP, receivedGift.id.id
+                )
+            })
+        if (res == 0) {
+            //todo throw IllegalStateException("Failed to write to data storage when processing received gifts.")
+            // The java library currently does not differentiate between a failed request and the first request.
+        }
+        return true
+    }
 
     // Write the new gift box descriptor to the data storage.
     private suspend fun updateGiftBoxDescriptor(descriptor: GiftBoxDescriptor): Boolean {
@@ -107,7 +104,7 @@ class DefaultGiftingService(
             SetPacket.Operation.UPDATE,
             mapOf(session.slot to descriptor)
         )
-        val reqId = session.setDataStorage(setPacket)
+        session.setDataStorage(setPacket)
         //todo return reqId != 0
         // The java library currently does not differentiate between a failed request and the first request.
         return true
@@ -208,7 +205,11 @@ class DefaultGiftingService(
     }
 
     // Adds a gift entry to the recipient's gift box.
-    private suspend fun addGiftToBox(recipientTeam: Int, recipientPlayerSlot: Int, giftEntry: GiftEntry): SendGiftResult {
+    private suspend fun addGiftToBox(
+        recipientTeam: Int,
+        recipientPlayerSlot: Int,
+        giftEntry: GiftEntry
+    ): SendGiftResult {
         val packet = SetPacket(
             getPlayerGiftBoxKey(recipientTeam, recipientPlayerSlot),
             emptyMap<GiftId, GiftEntry>()

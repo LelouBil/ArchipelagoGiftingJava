@@ -3,8 +3,8 @@ package net.leloubil.archipelago.gifting.tests.api
 import dev.koifysh.archipelago.Client
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
 import kotlinx.coroutines.flow.Flow
+import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
 
 /**
  * Represents the result of checking if a player can receive a gift.
@@ -32,7 +32,7 @@ sealed interface CanGiftResult {
         /**
          * The recipient doesn't have a gift box
          */
-        data object NoGiftBox: CanGiftError
+        data object NoGiftBox : CanGiftError
 
         /**
          * The data version of the sender is too low to send gifts to the recipient
@@ -79,7 +79,7 @@ sealed interface SendGiftResult {
 
 interface GiftingService {
 
-     /**
+    /**
      * Opens the gift box for the player.
      * @param acceptsAnyGifts If true, this will signal to other players that this gift box accepts all gifts, regardless of traits.
      * @param desiredTraits If [acceptsAnyGifts] is false, this will be the list of traits that this gift box accepts.
@@ -102,6 +102,16 @@ interface GiftingService {
      * This flow will emit gifts in the order they were received.
      */
     val receivedGifts: Flow<ReceivedGift>
+
+    /**
+     * Returns the current contents of the gift box, without any processing
+     */
+    suspend fun getGiftBoxContents(): List<ReceivedGift>
+
+    /**
+     * Removes the gift from the gift box
+     */
+    suspend fun removeGiftFromBox(receivedGift: ReceivedGift): Boolean
 
     /**
      * Checks if the player can receive a gift with the given traits.

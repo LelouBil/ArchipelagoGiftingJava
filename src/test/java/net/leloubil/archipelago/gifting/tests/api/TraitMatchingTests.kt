@@ -2,15 +2,17 @@ package net.leloubil.archipelago.gifting.tests.api
 
 import app.cash.turbine.test
 import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.extensions.testcontainers.perTest
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.shouldBe
-import net.leloubil.archipelago.gifting.testutils.defer
 import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
-import net.leloubil.archipelago.gifting.testutils.archipelagoContainer
+import net.leloubil.archipelago.gifting.testutils.ArchipelagoContainer
+import net.leloubil.archipelago.gifting.testutils.cliquePlayers
+import net.leloubil.archipelago.gifting.testutils.defer
 
 class TraitMatchingTests : BehaviorSpec({
     given("A running multiworld") {
-        val mw = archipelagoContainer(playersCount = 2)
+        val mw = ArchipelagoContainer(cliquePlayers(2)).also { register(it.perTest()) }
         val p1 by defer { mw.playerClient(1) }
         val p2 by defer { mw.playerClient(2) }
 

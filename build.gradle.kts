@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.get
 import org.jreleaser.model.Active
 import java.util.Optional
 
@@ -23,10 +25,12 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
+    testImplementation(libs.junit)
+    testImplementation(libs.junit.testcontainers)
     testImplementation(libs.slf4j.simple)
 }
 
-kotlin{
+kotlin {
     compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
 }
 
@@ -85,8 +89,8 @@ publishing {
 fun activeDeploy(provider: Provider<String>): Provider<Active> {
     // Releases turned on by environment variable
     return provider.map { v ->
-            Active.values().firstOrNull { v.uppercase() == it.name }.let { Optional.ofNullable(it) }
-        }.filter(Optional<Active>::isPresent).map(Optional<Active>::get)
+        Active.values().firstOrNull { v.uppercase() == it.name }.let { Optional.ofNullable(it) }
+    }.filter(Optional<Active>::isPresent).map(Optional<Active>::get)
 }
 
 jreleaser {
@@ -114,8 +118,8 @@ jreleaser {
                         // Releases turned on by environment variable
                         active = activeDeploy(
                             providers.environmentVariable(
-                                    "JRELEASER_DEPLOY_MAVEN_MAVENCENTRAL_RELEASE_DEPLOY_ACTIVE"
-                                )
+                                "JRELEASER_DEPLOY_MAVEN_MAVENCENTRAL_RELEASE_DEPLOY_ACTIVE"
+                            )
                         ).orElse(Active.NEVER)
                         applyMavenCentralRules = true
                         url = "https://central.sonatype.com/api/v1/publisher"
@@ -142,4 +146,5 @@ jreleaser {
         }
     }
 }
+
 

@@ -1,13 +1,13 @@
 package net.leloubil.archipelago.gifting.testutils
 
+import com.google.gson.Gson
 import dev.koifysh.archipelago.Client
 import dev.koifysh.archipelago.events.ArchipelagoEventListener
 import dev.koifysh.archipelago.events.ConnectionResultEvent
 import dev.koifysh.archipelago.network.ConnectionResult
-import io.kotest.core.TestConfiguration
-import io.kotest.core.spec.Spec
-import io.kotest.extensions.testcontainers.perTest
+import io.kotest.common.runBlocking
 import io.kotest.mpp.env
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
 import org.junit.AssumptionViolatedException
@@ -16,36 +16,45 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.builder.ImageFromDockerfile
-import org.testcontainers.lifecycle.Startable
-import java.lang.Exception
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.time.Duration.Companion.seconds
 
-data class ArchipelagoContainer(
-    private val container: GenericContainer<*>,
-    private val names: List<String>,
-    private val internalPort: Int
-) :
-    Startable by container {
+const val ARCHIPELAGO_INTERNAL_PORT = 38281
+
+data class ArchipelagoContainer
+@JvmOverloads
+constructor(
+    val players: List<ArchipelagoPlayer>,
+    val version: String = env("TESTS_ARCHIPELAGO_VERSION") ?: "0.6.1"
+) : GenericContainer<ArchipelagoContainer>(
+    archipelagoImage(
+        players,
+        version,
+        ARCHIPELAGO_INTERNAL_PORT
+    )
+), AutoCloseable {
+
+    init {
+        withStartupAttempts(1)
+        withExposedPorts(ARCHIPELAGO_INTERNAL_PORT)
+        waitingFor(Wait.forLogMessage("(.*)server listening on(.*)", 2))
+        withLogConsumer(Slf4jLogConsumer(LoggerFactory.getLogger("archipelago")))
+    }
+
     val url
-        get() = "ws://${container.host}:${container.getMappedPort(internalPort)}"
-
-    override fun getDependencies(): Set<Startable?>? {
-        return container.getDependencies()
-    }
-
-    override fun close() {
-        container.close()
-    }
+        get() = "ws://${host}:${getMappedPort(ARCHIPELAGO_INTERNAL_PORT)}"
 
 
     suspend fun playerClient(num: Int): Client = withTimeout(5.seconds) {
         suspendCancellableCoroutine { cont ->
-            val name = names.getOrNull(num - 1)
-            if (name == null) {
-                throw AssumptionViolatedException(
-                    "Trying to get player $num, but they are only ${names.size} players in this multiworld"
+            val player = players.getOrNull(num - 1)
+            if (player == null) {
+                val exception = AssumptionViolatedException(
+                    "Trying to get player $num, but they are only ${players.size} players in this multiworld"
                 )
+                cont.resumeWithException(exception)
+                throw exception
             }
             val c = object : Client() {
 
@@ -53,16 +62,20 @@ data class ArchipelagoContainer(
                 @ArchipelagoEventListener
                 fun onConnected(event: ConnectionResultEvent) {
                     if (event.result != ConnectionResult.Success) {
-                        throw AssumptionViolatedException(
-                            "Client for player $name failed to connect to the archipelago server: ${event.result}"
+                        cont.resumeWithException(
+                            AssumptionViolatedException(
+                                "Client for player $player failed to connect to the archipelago server: ${event.result}"
+                            )
                         )
+                        return
                     }
+                    println("Client $num connected")
                     cont.resume(this)
                 }
 
-                override fun onError(ex: Exception?) {
-                    throw AssumptionViolatedException("Archipelago client for player $name had an error", ex)
-
+                override fun onError(ex: Exception) {
+                    println("Error in the AP client for player $num, not failing the test because the client can retry")
+                    ex.printStackTrace()
                 }
 
                 override fun onClose(Reason: String?, attemptingReconnect: Int) {
@@ -71,8 +84,8 @@ data class ArchipelagoContainer(
             }
 
             c.eventManager.registerListener(c)
-            c.game = "Clique"
-            c.setName(name)
+            c.game = player.game
+            c.setName(player.name)
             c.connect(url)
             cont.invokeOnCancellation {
                 c.eventManager.unRegisterListener(c)
@@ -80,54 +93,55 @@ data class ArchipelagoContainer(
             }
         }
     }
+
+    fun blockingPlayerClient(num: Int): Client = runBlocking {
+        delay(2000) // delay between connections
+        playerClient(num)
+    }
 }
 
-fun Spec.archipelagoContainer(wantedVersion: String? = null, playersCount: Int = 1): ArchipelagoContainer {
-    val version = wantedVersion ?: env("TESTS_ARCHIPELAGO_VERSION") ?: "0.6.1"
-    val port = 38281
-    val url = "https://github.com/ArchipelagoMW/Archipelago/archive/refs/tags/$version.zip"
-//     to debug container build failures
-//     System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
+data class ArchipelagoPlayer(val name: String, val game: String, val gameOptions: Map<String, Any> = mapOf()) {
+    val yamlFileName = "$name.yaml"
+    val yamlContents = """
+        name: $name
+        game: $game
+        $game: ${Gson().toJson(gameOptions)}
+    """.trimIndent()
+}
 
-    val playerNames = mutableListOf<String>()
-    val image = ImageFromDockerfile().apply {
-        1.rangeTo(playersCount).forEach { playerID ->
-            val playerName = "Player$playerID"
-            playerNames.add(playerName)
-            withFileFromString(
-                "$playerName.yaml",
-                // language=yaml
-                """
-                name: $playerName
-                game: Clique
-                Clique: {}
-            """.trimIndent()
-            )
-
-        }
-    }.withDockerfileFromBuilder {
-        it.apply {
-            from("python:3.13")
-            run("apt update && apt install libarchive-tools wget -y")
-            run("mkdir /output")
-            workDir("/app")
-            run("wget -O /tmp/src.zip '$url' ")
-            run("bsdtar xf /tmp/src.zip --strip-components 1 -C /app")
-            run("python ModuleUpdate.py --yes")
-            playerNames.forEach { name ->
-                copy("$name.yaml", "/players/$name.yaml")
-            }
-            run("python Generate.py --player_files_path /players --outputpath /output")
-            entryPoint("python MultiServer.py --port $port /output/AP_*")
-        }
+fun cliquePlayers(count: Int) =
+    (1..count).map {
+        ArchipelagoPlayer(
+            "Player$it",
+            "Clique"
+        )
     }
 
-    val container = GenericContainer(image)
-        .withStartupAttempts(1)
-        .withExposedPorts(port)
-        .waitingFor(Wait.forListeningPort())
-        .withLogConsumer(Slf4jLogConsumer(LoggerFactory.getLogger("archipelago")))
-    val cont = ArchipelagoContainer(container, playerNames, port)
-    register(cont.perTest())
-    return cont
+private fun archipelagoImage(
+    players: List<ArchipelagoPlayer>,
+    version: String,
+    port: Int
+): ImageFromDockerfile = ImageFromDockerfile().apply {
+    players.forEach { player ->
+        withFileFromString(
+            player.yamlFileName,
+            player.yamlContents
+        )
+    }
+}.withDockerfileFromBuilder {
+    it.apply {
+        val url = "https://github.com/ArchipelagoMW/Archipelago/archive/refs/tags/$version.zip"
+        from("python:3.13")
+        run("apt update && apt install libarchive-tools wget -y")
+        run("mkdir /output")
+        workDir("/app")
+        run("wget -O /tmp/src.zip '$url' ")
+        run("bsdtar xf /tmp/src.zip --strip-components 1 -C /app")
+        run("python ModuleUpdate.py --yes")
+        players.forEach { p ->
+            copy(p.yamlFileName, "/players/${p.yamlFileName}")
+        }
+        run("python Generate.py --player_files_path /players --outputpath /output")
+        entryPoint("python MultiServer.py --port $port /output/AP_*") // a single file should be present
+    }
 }

@@ -1,7 +1,7 @@
 package net.leloubil.archipelago.gifting.tests.remote
 
 import com.google.gson.annotations.SerializedName
-import java.util.UUID
+import java.util.*
 
 const val LibraryDataVersion = 3
 
@@ -18,7 +18,7 @@ value class GiftId(val id: String) {
 value class GiftTraitName(val name: String)
 
 // https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/main/Documentation/Gifting%20API.md#giftbox
-internal fun getMotherBoxKey(team: Int) : String {
+internal fun getMotherBoxKey(team: Int): String {
     return "GiftBoxes;$team"
 }
 

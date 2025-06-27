@@ -4,7 +4,7 @@ A JVM implementation of the Archipelago Gifting Protocol.
 This library uses the [Archipelago Java Client](https://github.com/ArchipelagoMW/Java-Client)
 for communication with the Archipelago server.
 
-This library and readme were heavily inspired from the following .NET Gifting 
+This library and readme were heavily inspired from the following .NET Gifting
 Library: https://github.com/agilbert1412/Archipelago.Gifting.Net/
 
 The library is written in Kotlin and is best used with Kotlin features, but it is fully compatible with Java
@@ -14,6 +14,7 @@ This library provides a simple and easy way to interact with
 the [Gifting API](https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/main/Documentation/Gifting%20API.md)
 
 # Installation
+
 ## Gradle
 
 ```kotlin
@@ -141,7 +142,8 @@ but it is intended that a value of `1.0` describes an average quality or duratio
 
 For example, if your game contains speed boosts that can last 30s, 60s, or 90s,
 then a "Speed" trait of duration 1.0 would be a 60s Speed boost. A duration of 0.5 would be 30s,
-1.5 would be 90s, and if your mod can generate these with custom values, you could interpret a duration of 10.0 as 600 s.
+1.5 would be 90s, and if your mod can generate these with custom values, you could interpret a duration of 10.0 as 600
+s.
 
 Once again, it is completely up to the various game developers to define what these values mean for their game.
 They are intended to convey a vague concept, not strict descriptions.
@@ -176,7 +178,7 @@ Games can choose to process gifts as they wish. They can use the item name, they
 of both. Usually, gifts that come from the same game can be parsed by name for maximum accuracy, but within reason,
 games should try to understand items from other games too.
 
-Parsing by traits can be done however you wish. But the library offers a BKTreeCloseTraitParser class that allows 
+Parsing by traits can be done however you wish. But the library offers a BKTreeCloseTraitParser class that allows
 you to register items with their traits and find the closest match to a given set of traits.
 
 To use it, you must first initialize it and then register every one of your possible receivable gifts in the parser,
@@ -185,7 +187,7 @@ This list can come directly from the gifts you can send other players, or all in
 every item should have traits. The more items you have, the more traits you will need on the average item to get
 accurate parsing.
 
-For example, if you have 10 items that all have the same traits, the Parser will not be able to distinguish them. The 
+For example, if you have 10 items that all have the same traits, the Parser will not be able to distinguish them. The
 "Perfect" item list has every item with distinct traits. But even an imperfect list will work.
 
 Your items can be any type you want, and the class is built as a generic so that you can tell it what types are your
@@ -240,7 +242,7 @@ item to the player.
 2: Selling the gift
 
 The gift can carry a value in Archipelago currency, which can be added to the EnergyLink for everyone to use if your
-game supports interacting with the EnergyLink. A value of zero should be interpreted as 
+game supports interacting with the EnergyLink. A value of zero should be interpreted as
 "coming from a game without multiworld currency", and selling is not a good choice for these gifts
 
 3: Ignoring that gift completely. This should be a last resort, as the item will then be lost forever.

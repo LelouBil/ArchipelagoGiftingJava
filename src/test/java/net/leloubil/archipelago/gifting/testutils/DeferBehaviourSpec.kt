@@ -1,9 +1,6 @@
 package net.leloubil.archipelago.gifting.testutils
 
-import io.kotest.core.names.TestName
-import io.kotest.core.names.TestName.Companion.invoke
 import io.kotest.core.spec.style.scopes.AbstractContainerScope
-import io.kotest.core.spec.style.scopes.BehaviorSpecGivenContainerScope
 import kotlin.reflect.KProperty
 
 interface TestDeferred<T> {
@@ -31,9 +28,3 @@ fun <T> defer(block: suspend () -> T): TestDeferred<T> = DeferredImpl(block).als
         d.run()
     }
 }
-
-context(scope: BehaviorSpecGivenContainerScope)
-suspend fun that(name: String, test: BehaviorSpecGivenContainerScope.() -> Unit) =
-    scope.registerContainer(TestName("That: ", name, true), false, null) {
-        BehaviorSpecGivenContainerScope(this).test()
-    }
