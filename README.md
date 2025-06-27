@@ -19,7 +19,7 @@ the [Gifting API](https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/m
 
 ```kotlin
 dependencies {
-    implementation("net.leloubil:ArchipelagoGiftingJvm:1.0")
+    implementation("net.leloubil:archipelago-gifting-jvm:1.2.0")
 }
 ```
 
@@ -76,11 +76,16 @@ The flow will not drop any gifts, and they will arrive in the order they were se
 multiple gifts in the giftBox when you started collecting the flow, in which case the gifts that were already there
 will be received in an arbitrary order.
 
+You should remove the gifts from the gift box when you processed them, to not process them again when reconnecting
+
 ```kotlin
 service.receivedGifts.collect { gift ->
     // Process the gift
     println("I got a gift: $gift !")
+    
+    service.removeGiftsFromBox(gift)
 }
+val contents: List<ReceivedGifts> = service.getGiftBoxContents()
 ```
 
 ### Java
@@ -88,16 +93,21 @@ service.receivedGifts.collect { gift ->
 You should register a listener to the `JavaGiftingService` to get notified of new gifts as they arrive.
 
 Then call the `startListeningForGifts` method to start receiving gifts.
+**You do not need to get the inital gift box state, pending gifts will be emitted when you start listening**
 If you do not register a listener **before** calling this method, gifts will be lost.
+
+You should remove the gifts from the gift box when you processed them, to not process them again when reconnecting
 
 ```java
 class GiftHandler {
     public void initializeGifting() {
-        service.addGiftListener(() -> {
+        service.addGiftListener(gift -> {
             // Process the gift
             System.out.println("I got a gift: " + gift + " !");
+            service.removeGiftsFromBox(gift);
         });
         service.startListeningForGifts();
+        List<ReceivedGift> initialContents = service.getGiftBoxContents().get();
     }
 }
 ```

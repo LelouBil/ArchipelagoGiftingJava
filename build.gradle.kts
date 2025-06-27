@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.get
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jreleaser.model.Active
 import java.util.Optional
 
@@ -12,7 +13,7 @@ plugins {
 }
 
 group = "net.leloubil"
-version = "1.2.0-SNAPSHOT"
+version = "1.2.0"
 
 repositories {
     mavenCentral()
@@ -31,11 +32,25 @@ dependencies {
 }
 
 kotlin {
-    compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
+    compilerOptions{
+        freeCompilerArgs.add("-Xcontext-parameters")
+        jvmTarget = JvmTarget.JVM_1_8 // should be the default but just in case
+    }
+}
+java {
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 tasks.test {
     useJUnitPlatform()
+    java {
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlin {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
+    }
 }
 
 val sourcesJar by tasks.named("kotlinSourcesJar")
@@ -64,7 +79,7 @@ publishing {
             }
 
             pom {
-                name = "ArchipelagoGiftingJvm"
+                name = "archipelago-gifting-jvm"
                 description = "Archipelago Gifting API for JVM"
                 url = "https://github.com/LelouBil/ArchipelagoGiftingJvm"
                 licenses {
