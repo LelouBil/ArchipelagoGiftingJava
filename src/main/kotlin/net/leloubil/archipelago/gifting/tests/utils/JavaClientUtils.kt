@@ -47,7 +47,8 @@ internal suspend inline fun <reified T> Client.getDataStorage(key: String): T? =
     }
 
 
-internal suspend inline fun Client.setDataStorage(packet: SetPacket) = suspendCancellableCoroutine { continuation ->
+internal suspend inline fun <reified T> Client.setDataStorage(packet: SetPacket): DataStorageEventUpdate<T>? =
+    suspendCancellableCoroutine { continuation ->
     var req: Int? = null
     val listener = object {
 
@@ -56,7 +57,9 @@ internal suspend inline fun Client.setDataStorage(packet: SetPacket) = suspendCa
         fun onSetReply(evt: SetReplyEvent) {
             if (req == null || evt.requestID != req) return
             eventManager.unRegisterListener(this)
-            continuation.resume(req)
+            val old = evt.original_value?.let { convertFromGson<T>(it) }
+            val new = convertFromGson<T>(evt.value)
+            continuation.resume(DataStorageEventUpdate(old, new))
         }
     }
 
@@ -65,6 +68,7 @@ internal suspend inline fun Client.setDataStorage(packet: SetPacket) = suspendCa
         this.want_reply = true
     })
     if (req == 0) {
+        //todo resume with error
         //todo throw IOException("Failed to send data storage get request for key: $key")
         // current java client can't differentiate between a failed request and the first request
     }

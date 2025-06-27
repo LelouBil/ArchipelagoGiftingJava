@@ -166,8 +166,9 @@ public class JavaGiftingServiceTests {
                 ReceivedGift gift = contents.get(0);
 
                 // Remove the gift from the box
-                Boolean removeResult = service2.removeGiftFromBox(gift).get();
-                assertTrue(removeResult);
+                List<String> removeResult = service2.removeGiftsFromBox(gift).get();
+                assertNotNull(removeResult);
+                assertArrayEquals(new String[]{gift.getId()}, removeResult.toArray(String[]::new));
 
                 // Check that gift box is now empty
                 List<ReceivedGift> afterRemovalContents = service2.getGiftBoxContents().get();

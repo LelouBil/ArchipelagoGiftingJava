@@ -47,21 +47,6 @@ class DefaultGiftingService(
             .map { it.values }
             // Stop here if there are no new gifts.
             .filter { it.isNotEmpty() }
-            .onEach {
-                // Remove the gifts from the gift box in the data storage.
-                val dataStorageSet = session.setDataStorage(
-                    SetPacket(myGiftBoxKey, mapOf<GiftId, GiftEntry>()).apply {
-                        it.forEach { g ->
-                            addDataStorageOperation(
-                                SetPacket.Operation.POP, g.id
-                            )
-                        }
-                    })
-                if (dataStorageSet == 0) {
-                    //todo throw IllegalStateException("Failed to write to data storage when processing received gifts.")
-                    // The java library currently does not differentiate between a failed request and the first request.
-                }
-            }
             .flatMapConcat { list -> list.map { it.toReceived() }.asFlow() }
 
     private fun GiftEntry.toReceived(): ReceivedGift = ReceivedGift(
@@ -83,19 +68,26 @@ class DefaultGiftingService(
         return session.getDataStorage<PlayerGiftBox>(myGiftBoxKey)?.values?.map { it.toReceived() }.orEmpty()
     }
 
-    override suspend fun removeGiftFromBox(receivedGift: ReceivedGift): Boolean {
-        val res = session.setDataStorage(
+    override suspend fun removeGiftsFromBox(vararg receivedGifts: ReceivedGift): List<GiftId>? {
+        val res = session.setDataStorage<PlayerGiftBox>(
             SetPacket(myGiftBoxKey, mapOf<GiftId, GiftEntry>()).apply {
-                addDataStorageOperation(
-                    SetPacket.Operation.POP, receivedGift.id.id
-                )
+                receivedGifts.forEach { gift ->
+                    addDataStorageOperation(
+                        SetPacket.Operation.POP, gift.id.id
+                    )
+                }
             })
-        if (res == 0) {
+        if (res == null) {
+            return null
             //todo throw IllegalStateException("Failed to write to data storage when processing received gifts.")
             // The java library currently does not differentiate between a failed request and the first request.
         }
-        return true
+        if (res.old == null) {
+            return emptyList()
+        }
+        return res.old.filterKeys { !res.new.containsKey(it) }.values.map { GiftId(it.id) }
     }
+
 
     // Write the new gift box descriptor to the data storage.
     private suspend fun updateGiftBoxDescriptor(descriptor: GiftBoxDescriptor): Boolean {
@@ -104,10 +96,10 @@ class DefaultGiftingService(
             SetPacket.Operation.UPDATE,
             mapOf(session.slot to descriptor)
         )
-        session.setDataStorage(setPacket)
+        val res = session.setDataStorage<MotherBox>(setPacket)
         //todo return reqId != 0
         // The java library currently does not differentiate between a failed request and the first request.
-        return true
+        return res != null
     }
 
     override suspend fun openGiftBox(acceptsAnyGifts: Boolean, desiredTraits: List<String>): Boolean {
@@ -219,8 +211,8 @@ class DefaultGiftingService(
                 mapOf(giftEntry.id to giftEntry)
             )
         }
-        val res = session.setDataStorage(packet)
-        return if (res == 0) {
+        val res = session.setDataStorage<PlayerGiftBox>(packet)
+        return if (res == null) {
             //todo SendGiftResult.SendGiftFailure.DataStorageWriteError
             // The java library currently does not differentiate between a failed request and the first request.
             SendGiftResult.SendGiftSuccess

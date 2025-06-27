@@ -6,6 +6,8 @@ import java.util.*
 const val LibraryDataVersion = 3
 
 @JvmInline
+@OptIn(ExperimentalStdlibApi::class)
+@JvmExposeBoxed
 value class GiftId(val id: String) {
     companion object {
         fun new(): GiftId {

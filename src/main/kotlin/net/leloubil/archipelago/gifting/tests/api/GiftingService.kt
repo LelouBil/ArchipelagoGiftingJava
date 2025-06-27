@@ -4,6 +4,7 @@ import dev.koifysh.archipelago.Client
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import net.leloubil.archipelago.gifting.tests.remote.GiftId
 import net.leloubil.archipelago.gifting.tests.remote.GiftTraitName
 
 /**
@@ -98,20 +99,26 @@ interface GiftingService {
 
     /**
      * The flow that emits received gifts.
-     * The gifts will be removed from the gift box before being emitted in this flow.
      * This flow will emit gifts in the order they were received.
+     *
+     * **Note: To avoid processing gifts multiple times when reconnecting, be sure to remove them from the gift
+     * box using [removeGiftsFromBox] as soon as (or before) you handle them**
      */
     val receivedGifts: Flow<ReceivedGift>
 
     /**
-     * Returns the current contents of the gift box, without any processing
+     * Returns the current contents of the gift box
+     *
+     * **Note: To avoid processing gifts multiple times when reconnecting, be sure to remove them from the gift
+     * box using [removeGiftsFromBox] as soon as (or before) you handle them**
      */
     suspend fun getGiftBoxContents(): List<ReceivedGift>
 
     /**
-     * Removes the gift from the gift box
+     * Removes gifts from the gift box
+     * @return The list of gift IDs that were actually removed in this request
      */
-    suspend fun removeGiftFromBox(receivedGift: ReceivedGift): Boolean
+    suspend fun removeGiftsFromBox(vararg receivedGifts: ReceivedGift): List<GiftId>?
 
     /**
      * Checks if the player can receive a gift with the given traits.

@@ -105,4 +105,9 @@ data class ReceivedGift(
      * Whether this gift is actually a refund from a gift that was previously sent.
      */
     val isRefund: Boolean,
-)
+) {
+    @JvmName("getId")
+    fun getId(): String {
+        return id.id
+    }
+}

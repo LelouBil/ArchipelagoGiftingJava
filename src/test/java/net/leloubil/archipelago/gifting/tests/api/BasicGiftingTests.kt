@@ -44,15 +44,20 @@ class BasicGiftingTests : BehaviorSpec({
                             withClue("The gift should be sent successfully") {
                                 sendRes shouldBe SendGiftResult.SendGiftSuccess
                             }
+                            lateinit var received: ReceivedGift
                             withClue("The gift should be in the recipient's gift box") {
                                 receiverService.receivedGifts.test {
-                                    val received = awaitItem()
+                                    received = awaitItem()
                                     received.item shouldBe sentItem
                                     received.isRefund.shouldBeFalse()
                                     received.amount shouldBe sentAmount
                                     received.senderPlayerSlot shouldBe p1.slot
                                     received.senderPlayerTeam shouldBe p1.team
                                 }
+                            }
+                            withClue("The gift should not be removed after the event handler") {
+                                val boxState = receiverService.getGiftBoxContents()
+                                boxState shouldBe listOf(received)
                             }
                         }
                         and("I check the gift box contents") {
@@ -72,17 +77,17 @@ class BasicGiftingTests : BehaviorSpec({
                         }
 
                         and("The recipient removes the gift from the box") {
-                            val removeResult by defer {
-                                // Get the gift from the box
+                            val receivedGift by defer {
                                 val gifts = receiverService.getGiftBoxContents()
-                                val gift = gifts.first()
-
+                                gifts.first()
+                            }
+                            val removeResult by defer {
                                 // Remove the gift
-                                receiverService.removeGiftFromBox(gift)
+                                receiverService.removeGiftsFromBox(receivedGift)
                             }
 
                             then("The gift should be removed successfully") {
-                                removeResult.shouldBeTrue()
+                                removeResult shouldBe listOf(receivedGift.id)
 
                                 // Verify the gift box is empty
                                 val gifts = receiverService.getGiftBoxContents()

@@ -56,6 +56,9 @@ class JavaGiftingService(client: Client) : AutoCloseable {
 
     /**
      * Registers a listener for received gifts.
+     *
+     * **Note: To avoid processing gifts multiple times when reconnecting, be sure to remove them from the gift
+     * box using [removeGiftsFromBox] as soon as (or before) you handle them**
      * @param listener The listener to register.
      */
     fun registerReceivedGiftListener(listener: ReceivedGiftListener) {
@@ -86,8 +89,12 @@ class JavaGiftingService(client: Client) : AutoCloseable {
         }
     }
 
+
     /**
-     * Returns the current contents of the gift box, without any processing
+     * Returns the current contents of the gift box
+     *
+     * **Note: To avoid processing gifts multiple times when reconnecting, be sure to remove them from the gift
+     * box using [removeGiftsFromBox] as soon as (or before) you handle them**
      */
     fun getGiftBoxContents() = coroutineScope.async {
         giftingService.getGiftBoxContents()
@@ -95,9 +102,11 @@ class JavaGiftingService(client: Client) : AutoCloseable {
 
     /**
      * Removes a gift from the gift box
+     * @return The list of gift IDs that were actually removed in this request
      */
-    fun removeGiftFromBox(receivedGift: ReceivedGift) = coroutineScope.async {
-        giftingService.removeGiftFromBox(receivedGift)
+    fun removeGiftsFromBox(vararg receivedGifts: ReceivedGift): CompletableFuture<List<String>?> =
+        coroutineScope.async {
+            giftingService.removeGiftsFromBox(*receivedGifts)?.map { it.id }
     }.asCompletableFuture()
 
     /**
