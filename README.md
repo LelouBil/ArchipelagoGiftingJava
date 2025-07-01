@@ -19,7 +19,7 @@ the [Gifting API](https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/m
 
 ```kotlin
 dependencies {
-    implementation("net.leloubil:archipelago-gifting-jvm:1.2.0")
+    implementation("net.leloubil:archipelago-gifting-jvm:1.3.0")
 }
 ```
 
