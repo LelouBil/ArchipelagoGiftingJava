@@ -57,9 +57,9 @@ internal data class GiftTraitEntry(
     @SerializedName("trait")
     val name: String,
     @SerializedName("quality")
-    val quality: Float,
+    val quality: Float?,
     @SerializedName("duration")
-    val duration: Float,
+    val duration: Float?,
 )
 
 // https://github.com/agilbert1412/Archipelago.Gifting.Net/blob/main/Documentation/Gifting%20API.md#giftbox-metadata-specification

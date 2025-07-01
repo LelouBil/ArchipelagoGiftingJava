@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "net.leloubil"
-version = "1.2.0"
+version = "1.3.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -67,7 +67,7 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             groupId = project.group.toString()
-            artifactId = "ArchipelagoGiftingJvm"
+            artifactId = "archipelago-gifting-jvm"
 
             from(components["kotlin"])
             artifact(sourcesJar)

@@ -63,7 +63,7 @@ class DefaultGiftingService(
         item = GiftItem(
             name = this.name,
             traits = this.traits.map {
-                GiftTrait(it.name, it.quality, it.duration)
+                GiftTrait(it.name, it.quality ?: 1.0f, it.duration ?: 1.0f)
             },
             value = this.valuePerUnit,
         ),
